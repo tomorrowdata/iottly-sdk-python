@@ -1,0 +1,9 @@
+FROM python3-alpine
+
+RUN mkdir /tmp/
+ADD iottly_sdk_python/ /tmp/iottly_sdk_python/
+ADD setup.py /tmp/setup.py
+ADD setup.cfg /tmp/setup.cfg
+ADD LICENSE.txt /tmp/LICENSE.txt
+
+WORKDIR /tmp/
