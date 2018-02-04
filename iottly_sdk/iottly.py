@@ -3,6 +3,7 @@ import six
 
 import os
 import socket
+import time
 from threading import Thread, Condition
 from queue import Queue, Full
 
@@ -84,9 +85,8 @@ class IottlySDK:
             # this should happend only if:
             # - the iottly agent is disconnected from the network
             # - the sdk is disconnected from the iottly agent
-            self._buffer_full.acquire()
-            self._buffer_full.notify()
-            self._buffer_full.release()
+            with self._buffer_full:
+                self._buffer_full.notify()
             self._buffer.put(msg) # en-queue the msg blocking
 
 
@@ -111,18 +111,25 @@ class IottlySDK:
         self._connection_t = Thread(target=self._connect_to_agent)
         self._connection_t.start()
 
-    def stop():
+    def stop(self):
         """Convenience method to stop the sdk threads and perform cleanup
         """
         self._sdk_running = False
-        # Notify the connection thread
-        self._disconnected_from_agent.notify()
+        # Wake the connection thread so it can exit properly
+        with self._disconnected_from_agent:
+            self._disconnected_from_agent.notify()
         self._connection_t.join()
-
-        self._buffer_full.notify()
+        # Wake the drainer thread so it can exit properly
+        with self._buffer_full:
+            self._buffer_full.notify()
         self._drainer_t.join()
+        # Wake up consumer thread waiting on empty buffer
+        self._buffer.put(None, False)
+        # Wake up the consumer thread so it can exit properly
+        with self._connected_to_agent:
+            self._connected_to_agent.notify()
+        self._consumer_t.join()
 
-        
 
     # ======================================================================== #
     # =========================== Private Methods ============================ #
@@ -138,17 +145,28 @@ class IottlySDK:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
-                except ConnectionRefusedError:
+                    print('connected')
+                except ConnectionRefusedError as e:
+                    print(e)
                     continue
                 except OSError as e:
+                    print('oserror', e)
+                    time.sleep(0.2)
                     continue
                 self._socket = s
                 self._active = True
-                self._on_agent_status_changed_cb('started')
-                self._connect_to_agent.notifyAll()
+                if self._on_agent_status_changed_cb:
+                    self._on_agent_status_changed_cb('started')
+                # Notify the other threads that require the connection
+                self._connected_to_agent.notifyAll()
             # Wait until the unix socket is broken
             with self._disconnected_from_agent:
                 self._disconnected_from_agent.wait()
+
+        # Exited loop
+        if self._socket:
+            self._socket.close()
+        print('loop exited')
 
     def _consume_buffer(self):
         """Consume a message from the internal buffer and try to send it.
@@ -160,11 +178,17 @@ class IottlySDK:
 
             if connected:
                 msg = self._buffer.get()  # de-queue a msg blocking
+                if msg is None:
+                    break  # None is pushed to wake-up the thread for exit
+                # Try sending the message
                 sent = False
                 while not sent:
                     try:
                         # TODO here we should serialize the msg
-                        socket.sendall(msg.encode())
+                        payload = '{}\n'.format(msg).encode()
+                        socket.sendall(payload)
+                        # the message was forwarded
+                        sent = True
                     except OSError:
                         # Notify disconnection to connection mgmt thread
                         with self._disconnected_from_agent:
@@ -172,12 +196,14 @@ class IottlySDK:
                         # Wait for the connection to be re established
                         with self._connected_to_agent:
                             self._connected_to_agent.wait()
-                    # the message was forwarded
-                    sent = True
+                        # Check the exit condition on resume
+                        if not self._sdk_running:
+                            break
             else:
                 # Wait for the connection to be re established
                 with self._connected_to_agent:
                     self._connected_to_agent.wait()
+        print('consumer exiting')
 
     def _drain_buffer(self):
         while self._sdk_running:
@@ -189,3 +215,4 @@ class IottlySDK:
                         self._buffer.get(False)
                     except Empty:
                         pass
+        print('drainer exiting')

@@ -6,11 +6,12 @@ from multiprocessing import Process, Event
 class UDSStubServer:
     """UDS stub server for testing
     """
-    def __init__(self, socket_path, on_connect=None):
+    def __init__(self, socket_path, on_bind=None, on_connect=None):
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.socket.bind(socket_path)
         self.socket.listen()
-
+        if on_bind:
+            on_bind()
         self.on_client_connected_cb = on_connect
         self.proc = None
 
@@ -22,7 +23,8 @@ class UDSStubServer:
                 # Socket closed
                 break  # exit
             with client_sock:
-                self.on_client_connected_cb(client_sock)
+                if self.on_client_connected_cb:
+                    self.on_client_connected_cb(client_sock)
 
     def start(self):
         self.proc = Process(target=self.loop)
