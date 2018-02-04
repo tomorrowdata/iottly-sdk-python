@@ -6,7 +6,7 @@ import socket
 import time
 from threading import Thread, Condition
 from queue import Queue, Full
-
+import json
 
 class IottlySDK:
     """Class handling interactions with the iottly-agent
@@ -186,8 +186,7 @@ class IottlySDK:
                 sent = False
                 while not sent:
                     try:
-                        # TODO here we should serialize the msg
-                        payload = '{}\n'.format(msg).encode()
+                        payload = self._msg_serialize(msg)
                         socket.sendall(payload)
                         # the message was forwarded
                         sent = True
@@ -220,3 +219,7 @@ class IottlySDK:
                     except Empty:
                         pass
         print('drainer exiting')
+
+    def _msg_serialize(self, msg):
+        # Prepare message to be sent on a socket
+        return "{}\n".format(json.dumps({'data': msg})).encode()

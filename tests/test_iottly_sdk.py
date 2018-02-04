@@ -88,13 +88,13 @@ class IottlySDK(unittest.TestCase):
         def read_msg(s):
             msg_buf = []
             msg = read_msg_from_socket(s,msg_buf)
-            self.assertEqual('test data', msg.decode())
+            self.assertEqual('{"data": {"payload": "test data"}}', msg.decode())
             cb_called.set()
         server = UDSStubServer(self.socket_path, on_connect=read_msg)
         server.start()
         sdk = iottly.IottlySDK('testapp', self.socket_path)
         sdk.start()
-        sdk.send('test data')
+        sdk.send({'payload': 'test data'})
         try:
             cb_called.wait(1.0)
             self.assertTrue(cb_called.is_set())
