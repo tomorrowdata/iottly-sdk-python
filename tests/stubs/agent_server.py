@@ -31,4 +31,5 @@ class UDSStubServer:
         self.proc.start()
 
     def stop(self):
+        self.socket.close()
         self.proc.terminate()

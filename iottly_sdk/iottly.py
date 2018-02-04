@@ -4,7 +4,7 @@ import six
 import os
 import socket
 import time
-from threading import Thread, Condition
+from threading import Thread, Condition, Event
 from queue import Queue, Full
 import json
 
@@ -26,7 +26,7 @@ class IottlySDK:
             callback to receive notification on the iottly agent status.
 
         on_connection_status_changed (func, optional):
-            callback to receive notification on the 
+            callback to receive notification on the
             iottly agent connection status.
     """
 
@@ -62,7 +62,7 @@ class IottlySDK:
 
         self._buffer_full = Condition()
 
-        self._sdk_running = True
+        self._sdk_stopped = Event()
 
 
     def send(self, msg):
@@ -72,7 +72,7 @@ class IottlySDK:
         the **iottly agent** running on the same machine.
 
         If the agent is unavailable the message is buffered internally.
-        At most 
+        At most
 
         Args:
             msg (str): The string to be sent.
@@ -99,8 +99,8 @@ class IottlySDK:
         """Connect to the iottly agent.
         """
         # Start the thread that receive messages from the iottly agent
-        # self._thread = Thread(target=)
-
+        # self._receiver_t = Thread(target=self._receive_msgs_from_agent)
+        # self._receiver_t.start()
         # Start the thread that keep the buffer size at bay
         self._drainer_t = Thread(target=self._drain_buffer)
         self._drainer_t.start()
@@ -114,7 +114,7 @@ class IottlySDK:
     def stop(self):
         """Convenience method to stop the sdk threads and perform cleanup
         """
-        self._sdk_running = False
+        self._sdk_stopped.set()
         # Wake the connection thread so it can exit properly
         with self._disconnected_from_agent:
             self._disconnected_from_agent.notify()
@@ -125,10 +125,11 @@ class IottlySDK:
         self._drainer_t.join()
         # Wake up consumer thread waiting on empty buffer
         self._buffer.put(None, False)
-        # Wake up the consumer thread so it can exit properly
+        # Wake up the consumer and receiver threads so they can exit properly
         with self._connected_to_agent:
             self._connected_to_agent.notify()
         self._consumer_t.join()
+        # self._receiver_t.join()
 
 
     # ======================================================================== #
@@ -138,18 +139,22 @@ class IottlySDK:
     def _connect_to_agent(self):
         """Try to create a connection to the iottly agent SDK server.
         """
-        while self._sdk_running:
+        while not self._sdk_stopped.is_set():
             with self._connected_to_agent:
                 # # TODO check this in the init
                 # if os.path.exists(self._socket_path):
+                if self._socket:
+                    self._socket.close()
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
                     print('connected')
-                except ConnectionRefusedError as e:
-                    print(e)
+                except ConnectionRefusedError:
+                    s.close()
+                    time.sleep(0.2)
                     continue
                 except OSError as e:
+                    s.close()
                     print('oserror', e)
                     time.sleep(0.2)
                     continue
@@ -162,18 +167,20 @@ class IottlySDK:
             # Wait until the unix socket is broken
             with self._disconnected_from_agent:
                 self._disconnected_from_agent.wait()
-            if self._on_agent_status_changed_cb:
+            if self._on_agent_status_changed_cb and self._sdk_stopped.is_set():
                 self._on_agent_status_changed_cb('stopped')
-
-        # Exited loop
-        if self._socket:
-            self._socket.close()
+                with self._connected_to_agent:
+                    if self._socket:
+                        self._socket.close()
+                    self.socket = None
+                    self._active = False
+        # Exit
         print('loop exited')
 
     def _consume_buffer(self):
         """Consume a message from the internal buffer and try to send it.
         """
-        while self._sdk_running:
+        while not self._sdk_stopped.is_set():
             with self._connected_to_agent:
                 connected = self._active
                 socket = self._socket
@@ -198,7 +205,7 @@ class IottlySDK:
                         with self._connected_to_agent:
                             self._connected_to_agent.wait()
                         # Check the exit condition on resume
-                        if not self._sdk_running:
+                        if self._sdk_stopped.is_set():
                             break
             else:
                 # Wait for the connection to be re established
@@ -209,7 +216,7 @@ class IottlySDK:
     def _drain_buffer(self):
         """Keep the internal buffer at bay.
         """
-        while self._sdk_running:
+        while not self._sdk_stopped.is_set():
             with self._buffer_full:
                 self._buffer_full.wait()
                 if self._buffer.full():
@@ -223,3 +230,34 @@ class IottlySDK:
     def _msg_serialize(self, msg):
         # Prepare message to be sent on a socket
         return "{}\n".format(json.dumps({'data': msg})).encode()
+
+def _read_msg_from_socket(socket, msg_buf):
+    # Read one message from the socket
+    receive = True
+    while True:
+        for i, msg_buf_i in enumerate(msg_buf):
+            chunck, splitted, next_buf = msg_buf_i.partition(b'\n')
+            if splitted:
+                # we have a new message
+                msg = b''.join(msg_buf[:i]) + chunck
+                msg_buf[0] = next_buf
+                msg_buf[1:] = msg_buf[i+1:]
+                return msg.decode()
+        else:
+            if receive:
+                # Try to receive data from agent
+                try:
+                    buf = socket.recv(1024)
+                    print('buf read from sock {}'.format(buf))
+                    if buf == b'':
+                        # Broken connection
+                        receive = False
+                    else:
+                        msg_buf.append(buf)
+                except OSError:
+                    print('MAVACCA')
+                    receive = False
+            else:
+                # The buffer doesn't contains any complete msg
+                # and the socket is closed
+                return None
