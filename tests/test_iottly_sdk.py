@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import os
 import tempfile
@@ -59,6 +59,29 @@ class IottlySDK(unittest.TestCase):
         finally:
             sdk.stop()
             server.stop()
+
+    def test_connection_callback(self):
+        server_started = multiprocessing.Event()
+        client_connected = multiprocessing.Event()
+        def on_connect(s):
+            client_connected.set()
+        server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
+        server.start()
+        try:
+            server_started.wait(2.0)
+        except TimeoutError:
+            self.fail('cannot start server')
+        agent_status_cb = Mock()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path,
+                                on_agent_status_changed=agent_status_cb)
+        sdk.start()
+
+        client_connected.wait(2.0)
+        server.stop()
+        sdk.stop()
+        agent_status_cb.assert_has_calls([call('started'), call('stopped')])
+
 
     def test_sending_msg_to_agent(self):
         cb_called = multiprocessing.Event()

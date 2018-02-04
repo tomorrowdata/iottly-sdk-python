@@ -162,6 +162,8 @@ class IottlySDK:
             # Wait until the unix socket is broken
             with self._disconnected_from_agent:
                 self._disconnected_from_agent.wait()
+            if self._on_agent_status_changed_cb:
+                self._on_agent_status_changed_cb('stopped')
 
         # Exited loop
         if self._socket:
@@ -206,6 +208,8 @@ class IottlySDK:
         print('consumer exiting')
 
     def _drain_buffer(self):
+        """Keep the internal buffer at bay.
+        """
         while self._sdk_running:
             with self._buffer_full:
                 self._buffer_full.wait()
