@@ -24,7 +24,6 @@ def on_connection_status_changed(status):
 #   the previously defined callbacks (optional) to receive agent status notifications
 iottlysdk = iottly.IottlySDK(
     name  = 'myfirstiottlyapp',
-    socket_path='/var/run/iottly.com-agent/sdk/iottly_sdk_socket',
     max_buffered_msgs = 100,
     on_agent_status_changed = on_agent_status_changed,
     on_connection_status_changed = on_connection_status_changed)

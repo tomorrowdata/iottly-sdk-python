@@ -32,7 +32,7 @@ class IottlySDK:
     """
 
     def __init__(self, name,
-                 socket_path='/var/run/iottly/iottly_sdk_socket',
+                 socket_path='/var/run/iottly.com-agent/sdk/iottly_sdk_socket',
                  max_buffered_msgs=10,
                  on_agent_status_changed=None,
                  on_connection_status_changed=None):
