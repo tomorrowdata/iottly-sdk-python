@@ -70,6 +70,10 @@ class IottlySDK:
         # the curly brace are quadruplicated {{{{ -> {{ -> {
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
 
+        # Lookup-table (cmd_type -> callback)
+        # Store the callback function for a particular message type
+        self._cmd_callbacks = {}
+
         self._sdk_stopped = Event()
 
 
@@ -101,8 +105,38 @@ class IottlySDK:
 
     def subscribe(self, cmd_type, callback):
         """Subscribe to specific command received from the iottly-agent.
+
+        After subscribing a callback for a command type, the iottly SDK is
+        notified each time the **iottly agent** receives a message for the
+        particular command.
+
+        The `callback` will be invoked with a dict containing the
+        command parameters.
+
+        .. note:: If you call `subscribe` with a `cmd_type` already registered the callback is overwritten.
+
+        Args:
+            `cmd_type` (str):
+                The string denoting a particular type of command.
+            `callback` (func or callable):
+                The callback invoked when a message of type `cmd_type` is received from the **iottly agent**
+
+        Raises:
+            TypeError:
+                The method was invoked with an argument of wrong type.
         """
-        pass
+        if not isinstance(cmd_type, six.string_types):
+            # Typecheck cmd_type (python2 compatible)
+            err = 'cmd_type must be a string but {} was given.'.format(type(cmd_type))
+            raise TypeError(err)
+
+        if not six.callable(callback):
+            # Typecheck cmd_type (python2 compatible)
+            err = 'callback must be a callable but {} was given.'.format(type(cmd_type))
+            raise TypeError(err)
+
+        self._cmd_callbacks[cmd_type] = callback
+
 
     def start(self):
         """Connect to the iottly agent.
@@ -279,7 +313,7 @@ class IottlySDK:
         if 'signal' in msg:
             self._handle_signals_from_agent(msg['signal'])
         elif 'data' in msg:
-            pass
+            self._handle_cmd_from_agent(msg['data'])
         else:
             # TODO handle invalid msg. Disconnect?
             pass
@@ -290,6 +324,24 @@ class IottlySDK:
             self._on_agent_status_changed_cb(status)
         else:
             # TODO handle invalid signal
+            pass
+
+    def _handle_cmd_from_agent(self, cmd):
+        # Ensure there is a top-level key
+        if len(cmd) == 1:
+            # get the command type
+            cmd_type = None
+            for k in six.iterkeys(cmd):
+                cmd_type = k
+            # execute the registered cb (if any)
+            try:
+                cb = self._cmd_callbacks[cmd_type]
+                # Execute callback
+                cb(cmd[cmd_type])
+            except KeyError:
+                pass
+        else:
+            # TODO handle invalid commands
             pass
 
     def _msg_serialize(self, msg):

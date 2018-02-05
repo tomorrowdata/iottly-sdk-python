@@ -136,3 +136,29 @@ class IottlySDK(unittest.TestCase):
         finally:
             sdk.stop()
             server.stop()
+
+    def test_registering_callback_for_message_type(self):
+        server_started = multiprocessing.Event()
+        client_connected = multiprocessing.Event()
+        def on_connect(s):
+            s.send(b'{"data": {"echo":{"content":"IOTTLY hello world!!!!"}}}\n')
+            client_connected.set()
+        server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
+        server.start()
+        try:
+            server_started.wait(2.0)
+        except TimeoutError:
+            self.fail('cannot start server')
+        cmd_cb = Mock()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.subscribe('echo', cmd_cb)
+        sdk.start()
+        client_connected.wait(2.0)
+        server.stop()
+
+        time.sleep(0.6)  # give some time
+        try:
+            cmd_cb.assert_called_once_with({'content':'IOTTLY hello world!!!!'})
+        finally:
+            sdk.stop()
