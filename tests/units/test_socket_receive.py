@@ -6,14 +6,15 @@ from iottly_sdk.iottly import _read_msg_from_socket
 class TestSocketMessageReceive(unittest.TestCase):
 
     def test_receive_data(self):
-        data = b'fixture data\n'
+        data = [b'fixture data\n']
         socket = Mock()
-        socket.recv = Mock(return_value=data)
+        socket.recv = Mock(side_effect=data)
 
         msg_buf = []
-        msg = _read_msg_from_socket(socket, msg_buf)
+        msgs = _read_msg_from_socket(socket, msg_buf)
 
-        self.assertEqual(data[:-1].decode(), msg)
+        self.assertEqual(1, len(msgs))
+        self.assertEqual('fixture data', msgs[0])
 
     def test_receive_data_with_more_messages(self):
         data = b'fixture data\nother fixture data\nand some more\n'
@@ -21,14 +22,12 @@ class TestSocketMessageReceive(unittest.TestCase):
         socket.recv = Mock(return_value=data)
 
         msg_buf = []
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('fixture data', msg)
+        msgs = _read_msg_from_socket(socket, msg_buf)
 
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('other fixture data', msg)
-
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('and some more', msg)
+        self.assertEqual(3, len(msgs))
+        self.assertEqual('fixture data', msgs[0])
+        self.assertEqual('other fixture data', msgs[1])
+        self.assertEqual('and some more', msgs[2])
 
     def test_receive_chuncked_messages(self):
         data = [b'fixture data\nother fixt', b'ure data\nand some more\n']
@@ -36,14 +35,15 @@ class TestSocketMessageReceive(unittest.TestCase):
         socket.recv = Mock(side_effect=data)
 
         msg_buf = []
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('fixture data', msg)
+        msgs = _read_msg_from_socket(socket, msg_buf)
+        self.assertEqual(1, len(msgs))
+        self.assertEqual('fixture data', msgs[0])
 
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('other fixture data', msg)
+        msgs = _read_msg_from_socket(socket, msg_buf)
+        self.assertEqual(2, len(msgs))
+        self.assertEqual('other fixture data', msgs[0])
+        self.assertEqual('and some more', msgs[1])
 
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('and some more', msg)
 
     def test_handle_socket_error(self):
         socket = Mock()
@@ -59,8 +59,8 @@ class TestSocketMessageReceive(unittest.TestCase):
         socket.recv = Mock(side_effect=data)
 
         msg_buf = []
-        msg = _read_msg_from_socket(socket, msg_buf)
-        self.assertEqual('fixture data', msg)
+        msgs = _read_msg_from_socket(socket, msg_buf)
+        self.assertEqual('fixture data', msgs[0])
 
         msg = _read_msg_from_socket(socket, msg_buf)
         self.assertIsNone(msg)

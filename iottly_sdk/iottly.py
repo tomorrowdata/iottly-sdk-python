@@ -232,32 +232,41 @@ class IottlySDK:
         return "{}\n".format(json.dumps({'data': msg})).encode()
 
 def _read_msg_from_socket(socket, msg_buf):
-    # Read one message from the socket
-    receive = True
-    while True:
-        for i, msg_buf_i in enumerate(msg_buf):
-            chunck, splitted, next_buf = msg_buf_i.partition(b'\n')
+    msgs = []
+    while not msgs:
+        # Try to receive data from agent
+        try:
+            # Read one message from the socket
+            buf = socket.recv(1024)
+            if buf == b'':
+                # Broken connection
+                return None
+            else:
+                msg_buf.append(buf)
+        except OSError:
+            logging.info('OSERROR in sock recv')
+            return None
+        # Extract messages
+        print('pre', msgs, msg_buf)
+        i = 0
+        buff_dim = len(msg_buf)
+        while i < buff_dim:
+            current = msg_buf[i]
+            chunck, splitted, next_buf = current.partition(b'\n')
             if splitted:
                 # we have a new message
                 msg = b''.join(msg_buf[:i]) + chunck
-                msg_buf[0] = next_buf
-                msg_buf[1:] = msg_buf[i+1:]
-                return msg.decode()
-        else:
-            if receive:
-                # Try to receive data from agent
-                try:
-                    buf = socket.recv(1024)
-                    print('buf read from sock {}'.format(buf))
-                    if buf == b'':
-                        # Broken connection
-                        receive = False
-                    else:
-                        msg_buf.append(buf)
-                except OSError:
-                    print('MAVACCA')
-                    receive = False
+                if next_buf:
+                    msg_buf[:] = next_buf, * msg_buf[i+1:]
+                else:
+                    msg_buf[:] = msg_buf[i+1:]
+                # Update indexes
+                i = 0
+                buff_dim = len(msg_buf)
+                print(msg)
+                msgs.append(msg.decode())
             else:
-                # The buffer doesn't contains any complete msg
-                # and the socket is closed
-                return None
+                i += 1  # Consider next buffered item
+        print('post', msgs, msg_buf)
+    # There is at least 1 complete message
+    return msgs
