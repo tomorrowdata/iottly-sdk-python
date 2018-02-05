@@ -86,11 +86,31 @@ class IottlySDK:
         the **iottly agent** running on the same machine.
 
         If the agent is unavailable the message is buffered internally.
-        At most
+        At most `max_buffered_msgs` messages will be kept in the internal
+        buffer, after this limit is reached the older messages will be
+        discarded.
+
+        .. seealso:: The `max_buffered_msgs` parameter is configurable during the SDK initialization.
 
         Args:
-            msg (str): The string to be sent.
+            msg (`dict`):
+                The data to be sent. The `dict` should be JSON-serializable.
+
+        Raises:
+            TypeError:
+                `send` was invoked with a non `dict` argument.
+            ValueError:
+                `send` was invoked with a non JSON-serializable `dict`.
         """
+        if not isinstance(msg, dict):
+            err = 'msg must be a dict but {} was given.'.format(type(msg))
+            raise TypeError(err)
+
+        try:
+            json.dumps(msg)
+        except TypeError as e:
+            raise ValueError('Given msg is not JSON-serializable.')
+
         payload = (msg, False)  # denote a data payload
         try:
             self._buffer.put(payload, False)  # en-queue the msg non-blocking
@@ -118,7 +138,7 @@ class IottlySDK:
         .. note:: If you call `subscribe` with a `cmd_type` already registered the callback is overwritten.
 
         Args:
-            `cmd_type` (str):
+            `cmd_type` (`str`):
                 The string denoting a particular type of command.
             `callback` (func or callable):
                 The callback invoked when a message of type `cmd_type` is received from the **iottly agent**
