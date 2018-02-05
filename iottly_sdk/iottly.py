@@ -223,7 +223,6 @@ class IottlySDK:
                         self._buffer.get(False)
                     except Empty:
                         pass
-        logging.info('drainer exiting')
 
     def _receive_msgs_from_agent(self):
         """Receive messages/signals from the iottly agent
