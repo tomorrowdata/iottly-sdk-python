@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.githubpages']
+    'sphinx.ext.githubpages', 'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -78,6 +78,11 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = False
+autodoc_member_order = 'bysource'
+
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -105,9 +110,19 @@ html_static_path = ['_static']
 html_sidebars = {
     '**': [
         'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
+        'about.html',
     ]
 }
+
+html_theme_options = {
+    'description': 'Python SDK for iottly',
+    'description_font_style': 'bold',
+    'logo': 'logo.png',
+    'github_user': 'tomorrowdata',
+    'github_repo': 'iottly-sdk-python',
+    'github_count': 'false'
+}
+
 
 
 # -- Options for HTMLHelp output ------------------------------------------
@@ -162,6 +177,6 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'iottly-sdk', 'iottly-sdk Documentation',
-     author, 'iottly-sdk', 'One line description of project.',
+     author, 'iottly-sdk', 'Python SDK for iottly',
      'Miscellaneous'),
 ]
