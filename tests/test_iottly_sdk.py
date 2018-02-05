@@ -19,7 +19,10 @@ def read_msg_from_socket(socket, msg_buf):
             if splitted:
                 # we have a new message
                 msg = b''.join(msg_buf[:i]) + chunck
-                msg_buf[:] = next_buf , msg_buf[i+1:]
+                if next_buf:
+                    msg_buf[:] = next_buf, * msg_buf[i+1:]
+                else:
+                    msg_buf[:] = msg_buf[i+1:]
                 return msg
         buf = socket.recv(1024)
         if buf == b'':
@@ -42,6 +45,10 @@ class IottlySDK(unittest.TestCase):
         server_started = multiprocessing.Event()
         cb_called = multiprocessing.Event()
         def test_connection(s):
+            msg_buf = []
+            msg = read_msg_from_socket(s,msg_buf)
+            self.assertEqual('{"signal": {"sdkclient": {"name": "testapp", status: "connected"}}}', msg.decode())
+            cb_called.set()
             cb_called.set()
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=test_connection)
         server.start()
@@ -111,14 +118,16 @@ class IottlySDK(unittest.TestCase):
         cb_called = multiprocessing.Event()
         def read_msg(s):
             msg_buf = []
+            _ = read_msg_from_socket(s,msg_buf) # 1st msg in signal
             msg = read_msg_from_socket(s,msg_buf)
-            self.assertEqual('{"data": {"payload": "test data"}}', msg.decode())
+            self.assertEqual('{"data": {"sdkclient": {"name": "testapp"}, "payload": {"test_metric": "test data"}}}', msg.decode())
             cb_called.set()
         server = UDSStubServer(self.socket_path, on_connect=read_msg)
         server.start()
         sdk = iottly.IottlySDK('testapp', self.socket_path)
         sdk.start()
-        sdk.send({'payload': 'test data'})
+        time.sleep(0.7)
+        sdk.send({'test_metric': 'test data'})
         try:
             cb_called.wait(1.0)
             self.assertTrue(cb_called.is_set())

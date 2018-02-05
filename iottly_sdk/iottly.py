@@ -63,6 +63,14 @@ class IottlySDK:
 
         self._buffer_full = Condition()
 
+        # Pre-computed messages (JSON strings)
+        # NOTE literal curly braces are double-up to use format spec-language
+        self._app_start_msg = \
+            '{{"signal": {{"sdkclient": {{"name": "{}", status: "connected"}}}}}}\n'.format(self._name).encode()
+        # NOTE Since the data msg template will be later proessed with format
+        # the curly brace are quadruplicated {{{{ -> {{ -> {
+        self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
+
         self._sdk_stopped = Event()
 
 
@@ -78,8 +86,9 @@ class IottlySDK:
         Args:
             msg (str): The string to be sent.
         """
+        payload = (msg, False)  # denote a data payload
         try:
-            self._buffer.put(msg, False)  # en-queue the msg non-blocking
+            self._buffer.put(payload, False)  # en-queue the msg non-blocking
         except Full:
             # Notify the buffer flusher that the buffer is full
             # If the buffer dimension is correctly set
@@ -88,7 +97,7 @@ class IottlySDK:
             # - the sdk is disconnected from the iottly agent
             with self._buffer_full:
                 self._buffer_full.notify()
-            self._buffer.put(msg) # en-queue the msg blocking
+            self._buffer.put(payload) # en-queue the msg blocking
 
 
     def subscribe(self, cmd_type, callback):
@@ -161,7 +170,8 @@ class IottlySDK:
                 # Exec callback
                 if self._on_agent_status_changed_cb:
                     self._on_agent_status_changed_cb('started')
-                # TODO send registration msg to iottly agent
+                # Send notification of connected app to the iottly agent
+                self._buffer.put((self._app_start_msg, True))  # Signalling
                 # Notify the other threads that require the connection
                 self._disconnected_from_agent.clear()
                 self._connected_to_agent.notifyAll()
@@ -199,7 +209,13 @@ class IottlySDK:
                         if self._sdk_stopped.is_set():
                             break
                 try:
-                    payload = self._msg_serialize(msg)
+                    data, is_signal = msg
+                    if is_signal:
+                        # Signalling data is already JSON formatted and
+                        # netwrok encoded (bytes)
+                        payload = data
+                    else:
+                        payload = self._msg_serialize(data)
                     socket.sendall(payload)
                     # the message was forwarded
                     sent = True
@@ -275,7 +291,7 @@ class IottlySDK:
 
     def _msg_serialize(self, msg):
         # Prepare message to be sent on a socket
-        return "{}\n".format(json.dumps({'data': msg})).encode()
+        return self._data_msg.format(json.dumps(msg)).encode()
 
 def _read_msg_from_socket(socket, msg_buf):
     msgs = []
