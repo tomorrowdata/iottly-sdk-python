@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, call
 
 import os
+import time
 import tempfile
 import multiprocessing
 
@@ -82,6 +83,30 @@ class IottlySDK(unittest.TestCase):
         sdk.stop()
         agent_status_cb.assert_has_calls([call('started'), call('stopped')])
 
+    def test_receiving_stopping_signal_from_server(self):
+        server_started = multiprocessing.Event()
+        client_connected = multiprocessing.Event()
+        def on_connect(s):
+            s.send(b'{"signal": {"agentstatus": "stopping"}}\n')
+            client_connected.set()
+        server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
+        server.start()
+        try:
+            server_started.wait(2.0)
+        except TimeoutError:
+            self.fail('cannot start server')
+        agent_status_cb = Mock()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path,
+                                on_agent_status_changed=agent_status_cb)
+        sdk.start()
+        client_connected.wait(2.0)
+        server.stop()
+
+        time.sleep(0.6)  # give some time
+        agent_status_cb.assert_has_calls([call('started'), call('stopping'), call('stopped')])
+        self.assertEqual(3, agent_status_cb.call_count)
+        sdk.stop()
 
     def test_sending_msg_to_agent(self):
         cb_called = multiprocessing.Event()

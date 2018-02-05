@@ -4,7 +4,7 @@ import six
 import os
 import socket
 import time
-from threading import Thread, Condition, Event
+from threading import Thread, Condition, Event, Lock
 from queue import Queue, Full
 import json
 
@@ -53,10 +53,11 @@ class IottlySDK:
         self._buffer = Queue(maxsize=self._max_buffered_msgs)
 
         # Conditions and state mgmt
-        self._connected_to_agent = Condition()
-        self._disconnected_from_agent = Condition()
+        self._socket_state_lock = Lock()
+        self._connected_to_agent = Condition(self._socket_state_lock)
+        self._disconnected_from_agent = Event()
         # Indicate if there is a link to the iottly agent
-        self._active = False
+        self._agent_linked = False
         # The unix socket to communicate with the iottly agent
         self._socket = None
 
@@ -99,16 +100,18 @@ class IottlySDK:
         """Connect to the iottly agent.
         """
         # Start the thread that receive messages from the iottly agent
-        # self._receiver_t = Thread(target=self._receive_msgs_from_agent)
-        # self._receiver_t.start()
+        self._receiver_t = Thread(target=self._receive_msgs_from_agent,
+                                    name='receiver')
+        self._receiver_t.start()
         # Start the thread that keep the buffer size at bay
-        self._drainer_t = Thread(target=self._drain_buffer)
+        self._drainer_t = Thread(target=self._drain_buffer, name='drainer')
         self._drainer_t.start()
         # Start the thread that send messages to the iottly agent
-        self._consumer_t = Thread(target=self._consume_buffer)
+        self._consumer_t = Thread(target=self._consume_buffer, name='consumer')
         self._consumer_t.start()
         # Start the thread that connect the iottly agent
-        self._connection_t = Thread(target=self._connect_to_agent)
+        self._connection_t = Thread(target=self._connect_to_agent,
+                                    name='connection')
         self._connection_t.start()
 
     def stop(self):
@@ -116,8 +119,7 @@ class IottlySDK:
         """
         self._sdk_stopped.set()
         # Wake the connection thread so it can exit properly
-        with self._disconnected_from_agent:
-            self._disconnected_from_agent.notify()
+        self._disconnected_from_agent.set()
         self._connection_t.join()
         # Wake the drainer thread so it can exit properly
         with self._buffer_full:
@@ -127,9 +129,9 @@ class IottlySDK:
         self._buffer.put(None, False)
         # Wake up the consumer and receiver threads so they can exit properly
         with self._connected_to_agent:
-            self._connected_to_agent.notify()
+            self._connected_to_agent.notifyAll()
         self._consumer_t.join()
-        # self._receiver_t.join()
+        self._receiver_t.join()
 
 
     # ======================================================================== #
@@ -143,75 +145,71 @@ class IottlySDK:
             with self._connected_to_agent:
                 # # TODO check this in the init
                 # if os.path.exists(self._socket_path):
-                if self._socket:
-                    self._socket.close()
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
-                    print('connected')
                 except ConnectionRefusedError:
                     s.close()
                     time.sleep(0.2)
                     continue
                 except OSError as e:
                     s.close()
-                    print('oserror', e)
                     time.sleep(0.2)
                     continue
                 self._socket = s
-                self._active = True
+                self._agent_linked = True
+                # Exec callback
                 if self._on_agent_status_changed_cb:
                     self._on_agent_status_changed_cb('started')
+                # TODO send registration msg to iottly agent
                 # Notify the other threads that require the connection
+                self._disconnected_from_agent.clear()
                 self._connected_to_agent.notifyAll()
             # Wait until the unix socket is broken
-            with self._disconnected_from_agent:
-                self._disconnected_from_agent.wait()
-            if self._on_agent_status_changed_cb and self._sdk_stopped.is_set():
+            # and the event _disconnected_from_agent is fired
+            self._disconnected_from_agent.wait()
+            with self._connected_to_agent:
+                # Set the disconnected state flag
+                self._agent_linked = False
+                if self._socket:
+                    self._socket.close()
+                self.socket = None
+
+            # Exec callback
+            if self._on_agent_status_changed_cb:
                 self._on_agent_status_changed_cb('stopped')
-                with self._connected_to_agent:
-                    if self._socket:
-                        self._socket.close()
-                    self.socket = None
-                    self._active = False
         # Exit
-        print('loop exited')
 
     def _consume_buffer(self):
         """Consume a message from the internal buffer and try to send it.
         """
         while not self._sdk_stopped.is_set():
-            with self._connected_to_agent:
-                connected = self._active
-                socket = self._socket
-
-            if connected:
-                msg = self._buffer.get()  # de-queue a msg blocking
-                if msg is None:
-                    break  # None is pushed to wake-up the thread for exit
-                # Try sending the message
-                sent = False
-                while not sent:
-                    try:
-                        payload = self._msg_serialize(msg)
-                        socket.sendall(payload)
-                        # the message was forwarded
-                        sent = True
-                    except OSError:
-                        # Notify disconnection to connection mgmt thread
-                        with self._disconnected_from_agent:
-                            self._disconnected_from_agent.notify()
-                        # Wait for the connection to be re established
-                        with self._connected_to_agent:
-                            self._connected_to_agent.wait()
+            msg = self._buffer.get()  # de-queue a msg blocking
+            if msg is None:
+                break  # None is pushed to wake-up the thread for exit
+            # Try sending the message
+            sent = False
+            while not sent:
+                with self._connected_to_agent:
+                    # Get the socket
+                    socket = self._socket
+                    if not socket:
+                        self._connected_to_agent.wait()
                         # Check the exit condition on resume
                         if self._sdk_stopped.is_set():
                             break
-            else:
-                # Wait for the connection to be re established
-                with self._connected_to_agent:
-                    self._connected_to_agent.wait()
-        print('consumer exiting')
+                try:
+                    payload = self._msg_serialize(msg)
+                    socket.sendall(payload)
+                    # the message was forwarded
+                    sent = True
+                except OSError:
+                    # Wait for the connection to be re established
+                    with self._connected_to_agent:
+                        self._connected_to_agent.wait()
+                    # Check the exit condition on resume
+                    if self._sdk_stopped.is_set():
+                        break
 
     def _drain_buffer(self):
         """Keep the internal buffer at bay.
@@ -225,7 +223,53 @@ class IottlySDK:
                         self._buffer.get(False)
                     except Empty:
                         pass
-        print('drainer exiting')
+        logging.info('drainer exiting')
+
+    def _receive_msgs_from_agent(self):
+        """Receive messages/signals from the iottly agent
+        """
+        msg_buf = []
+        while not self._sdk_stopped.is_set():
+            with self._socket_state_lock:
+                socket = self._socket
+            if not socket:
+                # Wait for the connection to be re established
+                with self._connected_to_agent:
+                    self._connected_to_agent.wait()
+                # Check the exit condition on resume
+                if self._sdk_stopped.is_set():
+                    break
+            msgs = _read_msg_from_socket(self._socket, msg_buf)
+            if msgs:
+                for msg in msgs:
+                    # Process messages
+                    self._process_msg_from_agent(msg)
+            else:
+                # None msg received -> Notify disconnection
+                with self._socket_state_lock:
+                    if not self._disconnected_from_agent.is_set():
+                        self._disconnected_from_agent.set()
+                # Wait for the connection to be re established
+                with self._connected_to_agent:
+                    self._connected_to_agent.wait()
+
+    def _process_msg_from_agent(self, msg):
+        msg = json.loads(msg)
+        if 'signal' in msg:
+            self._handle_signals_from_agent(msg['signal'])
+        elif 'data' in msg:
+            pass
+        else:
+            # TODO handle invalid msg. Disconnect?
+            pass
+
+    def _handle_signals_from_agent(self, signal):
+        if 'agentstatus' in signal:
+            status = signal['agentstatus']  # TODO validate status
+            self._on_agent_status_changed_cb(status)
+        else:
+            # TODO handle invalid signal
+            pass
 
     def _msg_serialize(self, msg):
         # Prepare message to be sent on a socket
@@ -244,10 +288,8 @@ def _read_msg_from_socket(socket, msg_buf):
             else:
                 msg_buf.append(buf)
         except OSError:
-            logging.info('OSERROR in sock recv')
             return None
         # Extract messages
-        print('pre', msgs, msg_buf)
         i = 0
         buff_dim = len(msg_buf)
         while i < buff_dim:
@@ -263,10 +305,8 @@ def _read_msg_from_socket(socket, msg_buf):
                 # Update indexes
                 i = 0
                 buff_dim = len(msg_buf)
-                print(msg)
                 msgs.append(msg.decode())
             else:
                 i += 1  # Consider next buffered item
-        print('post', msgs, msg_buf)
     # There is at least 1 complete message
     return msgs
