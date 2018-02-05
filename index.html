@@ -1,0 +1,238 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Python SDK iottly &#8212; iottly-sdk 1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="python-sdk-iottly">
+<h1>Python SDK iottly<a class="headerlink" href="#python-sdk-iottly" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="iottly_sdk.iottly.IottlySDK">
+<em class="property">class </em><code class="descname">IottlySDK</code><span class="sig-paren">(</span><em>name</em>, <em>socket_path='/var/run/iottly.com-agent/sdk/iottly_sdk_socket'</em>, <em>max_buffered_msgs=10</em>, <em>on_agent_status_changed=None</em>, <em>on_connection_status_changed=None</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class handling interactions with the iottly-agent</p>
+<p>After initializing the SDK it is possible to:</p>
+<ul class="simple">
+<li>Register <strong>callbacks</strong> that will be called when a particular type of
+message is received from the <strong>iottly agent</strong>.</li>
+<li>Send messages to <strong>iottly</strong> through the <strong>iottly agent</strong></li>
+</ul>
+<p>The SDK is initialized with a <cite>name</cite> that will identify your application
+in your <strong>iottly</strong> project.</p>
+<p>Optionally you can provide 2 callbacks to the <cite>IottlySDK</cite> constructor:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt><cite>on_agent_status_changed</cite>: that will be called when the SDK connect</dt>
+<dd>and disconnect from the <strong>iottly agent</strong>.
+This callback will receive a string argument of:<ul class="last">
+<li><cite>started</cite>: if the sdk is successfully linked with the <strong>iottly agent</strong></li>
+<li><cite>stopping</cite>: if the <strong>iottly agent</strong> is going through a scheduled reboot</li>
+<li><cite>stopped</cite>: if the sdk is disconnected from the <strong>iottly agent</strong></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>on_connection_status_changed</cite>: that will be called when the <strong>iottly agent</strong></dt>
+<dd>has sent a notification on a change in the MQTT connectivity of the
+device.
+This callback will receive a string argument of:<ul class="last">
+<li><cite>connected</cite>: MQTT is up in the linked <strong>iottly agent</strong></li>
+<li><dl class="first docutils">
+<dt><cite>disconnected</cite>: MQTT is down in the linked <strong>iottly agent</strong></dt>
+<dd>(messages sent with the iottly agent while disconnected will be
+bufferd internally)q</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> (<cite>str</cite>) – an identifier for the connected application.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>socket_path</strong> (<cite>str</cite>) – the path to the unix-socket exposed by the iottly agent.</li>
+<li><strong>max_buffered_msgs</strong> (<cite>int</cite>) – the maximum number of messages buffered internally.</li>
+<li><strong>on_agent_status_changed</strong> (<em>func</em><em>, </em><em>optional</em>) – callback to receive notification on the iottly agent status.</li>
+<li><strong>on_connection_status_changed</strong> (<em>func</em><em>, </em><em>optional</em>) – callback to receive notification on the
+iottly agent connection status.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="iottly_sdk.iottly.IottlySDK.subscribe">
+<code class="descname">subscribe</code><span class="sig-paren">(</span><em>cmd_type</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe to specific command received from the iottly-agent.</p>
+<p>After subscribing a callback for a command type, the iottly SDK is
+notified each time the <strong>iottly agent</strong> receives a message for the
+particular command.</p>
+<p>The <cite>callback</cite> will be invoked with a dict containing the
+command parameters.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you call <cite>subscribe</cite> with a <cite>cmd_type</cite> already registered the callback is overwritten.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cmd_type</strong> (<cite>str</cite>) – The string denoting a particular type of command.</li>
+<li><strong>callback</strong> (<em>func</em><em> or </em><em>callable</em>) – The callback invoked when a message of type <cite>cmd_type</cite> is received from the <strong>iottly agent</strong></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code> – The method was invoked with an argument of wrong type.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="iottly_sdk.iottly.IottlySDK.start">
+<code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect to the iottly agent.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="iottly_sdk.iottly.IottlySDK.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a message to iottly.</p>
+<p>Use this method for sending a message to iottly through
+the <strong>iottly agent</strong> running on the same machine.</p>
+<p>If the agent is unavailable the message is buffered internally.
+At most <cite>max_buffered_msgs</cite> messages will be kept in the internal
+buffer, after this limit is reached the older messages will be
+discarded.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The <cite>max_buffered_msgs</cite> parameter is configurable during the SDK initialization.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>msg</strong> (<cite>dict</cite>) – The data to be sent. The <cite>dict</cite> should be JSON-serializable.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code> – <cite>send</cite> was invoked with a non <cite>dict</cite> argument.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – <cite>send</cite> was invoked with a non JSON-serializable <cite>dict</cite>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<p class="logo">
+  <a href="#">
+    <img class="logo" src="_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">Python SDK for iottly</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=tomorrowdata&repo=iottly-sdk-python&type=watch&count=false&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, TomorrowData Srl.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
