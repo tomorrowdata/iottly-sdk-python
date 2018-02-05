@@ -1,0 +1,21 @@
+FROM python:3.5-alpine
+
+RUN apk update
+RUN apk add screen
+
+RUN mkdir -p /test
+ADD iottly_sdk/ /test/iottly_sdk/
+ADD tests/ /test/tests/
+
+ADD setup.py /test/setup.py
+ADD setup.cfg /test/setup.cfg
+ADD README.rst /test/README.rst
+ADD LICENSE.txt /test/LICENSE.txt
+
+RUN mkdir -p /opt
+
+RUN pip install -e /test
+
+
+RUN mkdir -p /mybeautifulapp
+WORKDIR /mybeautifulapp
