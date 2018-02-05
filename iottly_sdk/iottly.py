@@ -37,7 +37,7 @@ class IottlySDK:
                  on_connection_status_changed=None):
         """Init IottlySDK
         """
-        self._name = name
+        self._name = str(name)
         self._socket_path = socket_path
         self._max_buffered_msgs = max_buffered_msgs
         self._on_agent_status_changed_cb = on_agent_status_changed
