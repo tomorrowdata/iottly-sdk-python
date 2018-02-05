@@ -309,14 +309,18 @@ class IottlySDK:
                     self._connected_to_agent.wait()
 
     def _process_msg_from_agent(self, msg):
-        msg = json.loads(msg)
+        try:
+            msg = json.loads(msg)
+        except ValueError:
+            # if we receive an invalid message -> skip it
+            return
         if 'signal' in msg:
             self._handle_signals_from_agent(msg['signal'])
         elif 'data' in msg:
             self._handle_cmd_from_agent(msg['data'])
         else:
             # TODO handle invalid msg. Disconnect?
-            pass
+            return
 
     def _handle_signals_from_agent(self, signal):
         if 'agentstatus' in signal:
@@ -327,7 +331,7 @@ class IottlySDK:
             self._on_connection_status_changed_cb(status)
         else:
             # TODO handle invalid signal
-            pass
+            return
 
     def _handle_cmd_from_agent(self, cmd):
         # Ensure there is a top-level key
