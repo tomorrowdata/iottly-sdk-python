@@ -267,6 +267,7 @@ class IottlySDK:
                         # Check the exit condition on resume
                         if self._sdk_stopped.is_set():
                             break
+                        continue  # re-acquire the socket (None)
                 try:
                     data, is_signal = msg
                     if is_signal:
