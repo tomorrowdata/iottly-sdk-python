@@ -105,7 +105,6 @@ class IottlySDK(unittest.TestCase):
 
         time.sleep(0.6)  # give some time
         agent_status_cb.assert_has_calls([call('started'), call('stopping'), call('stopped')])
-        self.assertEqual(3, agent_status_cb.call_count)
         sdk.stop()
 
     def test_sending_msg_to_agent(self):
