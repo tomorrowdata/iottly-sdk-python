@@ -211,8 +211,6 @@ class IottlySDK:
         """
         while not self._sdk_stopped.is_set():
             with self._connected_to_agent:
-                # # TODO check this in the init
-                # if os.path.exists(self._socket_path):
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
