@@ -1,7 +1,6 @@
 import time
 
-# import iottly_sdk
-from iottly_sdk import iottly
+from iottly_sdk import IottlySDK
 
 # Define callback to receive notifications
 # about the iottly agent status:
@@ -22,7 +21,7 @@ def on_connection_status_changed(status):
 # -  a "name" to identify your application (this will appear in the dashboard logs)
 # -  the optional number of messages retained if agent is down (defaults to 1500)
 # -  the previously defined callbacks (optional) to receive agent status notifications
-iottlysdk = iottly.IottlySDK(
+iottlysdk = IottlySDK(
     name  = 'myfirstiottlyapp',
     max_buffered_msgs = 100,
     on_agent_status_changed = on_agent_status_changed,
