@@ -66,7 +66,7 @@ class IottlySDK:
         # Pre-computed messages (JSON strings)
         # NOTE literal curly braces are double-up to use format spec-language
         self._app_start_msg = \
-            '{{"signal": {{"sdkclient": {{"name": "{}", status: "connected"}}}}}}\n'.format(self._name).encode()
+            '{{"signal": {{"sdkclient": {{"name": "{}", "status": "connected"}}}}}}\n'.format(self._name).encode()
         # NOTE Since the data msg template will be later proessed with format
         # the curly brace are quadruplicated {{{{ -> {{ -> {
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
