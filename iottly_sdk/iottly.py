@@ -244,6 +244,9 @@ class IottlySDK:
                     # Process messages
                     self._process_msg_from_agent(msg)
             else:
+                # Check the exit condition on resume
+                if self._sdk_stopped.is_set():
+                    break
                 # None msg received -> Notify disconnection
                 with self._socket_state_lock:
                     if not self._disconnected_from_agent.is_set():
