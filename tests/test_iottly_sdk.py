@@ -49,7 +49,6 @@ class IottlySDK(unittest.TestCase):
             msg = read_msg_from_socket(s,msg_buf)
             self.assertEqual('{"signal": {"sdkclient": {"name": "testapp", "status": "connected"}}}', msg.decode())
             cb_called.set()
-            cb_called.set()
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=test_connection)
         server.start()
         try:
