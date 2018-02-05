@@ -4,6 +4,7 @@ import six
 import os
 import socket
 import time
+from functools import wraps
 from threading import Thread, Condition, Event, Lock
 from queue import Queue, Full
 import json
@@ -40,8 +41,8 @@ class IottlySDK:
         self._name = str(name)
         self._socket_path = socket_path
         self._max_buffered_msgs = max_buffered_msgs
-        self._on_agent_status_changed_cb = on_agent_status_changed
-        self._on_connection_status_changed_cb = on_connection_status_changed
+        self._on_agent_status_changed_cb = self._wrapped_cb_execution(on_agent_status_changed)
+        self._on_connection_status_changed_cb = self._wrapped_cb_execution(on_connection_status_changed)
 
         # Threads references
         self._consumer_t = None
@@ -69,6 +70,7 @@ class IottlySDK:
         # NOTE Since the data msg template will be later proessed with format
         # the curly brace are quadruplicated {{{{ -> {{ -> {
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
+        self._err_msg = '{{{{"signal": {{{{"sdkclient": {{{{"name": "{}", "error": {}}}}}}}}}}}}}\n'.format(self._name, '{}')
 
         # Lookup-table (cmd_type -> callback)
         # Store the callback function for a particular message type
@@ -135,7 +137,7 @@ class IottlySDK:
             err = 'callback must be a callable but {} was given.'.format(type(cmd_type))
             raise TypeError(err)
 
-        self._cmd_callbacks[cmd_type] = callback
+        self._cmd_callbacks[cmd_type] = self._wrapped_cb_execution(callback)
 
 
     def start(self):
@@ -354,6 +356,27 @@ class IottlySDK:
     def _msg_serialize(self, msg):
         # Prepare message to be sent on a socket
         return self._data_msg.format(json.dumps(msg)).encode()
+
+    def _wrapped_cb_execution(self, f):
+        """Wrap callback execution and send error to agent.
+        """
+        if f is None:
+            return None
+
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                f(*args, **kwargs)
+            except Exception as exc:
+                exc_dump = json.dumps({
+                    'type': exc.__class__.__name__,
+                    'msg': str(exc)
+                })
+                # Format signal message
+                exc_msg = (self._err_msg.format(exc_dump).encode(), True)
+                self._buffer.put(exc_msg)  # En-quque msg blocking
+
+        return wrapper
 
 def _read_msg_from_socket(socket, msg_buf):
     msgs = []
