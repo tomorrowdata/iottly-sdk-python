@@ -15,13 +15,13 @@ class IottlySDK:
     ...
 
     Args:
-        name (str):
+        name (`str`):
             an identifier for the connected application.
-        socket_path (str):
+        socket_path (`str`):
             the path to the unix-socket exposed by the iottly agent.
 
-        max_buffered_msgs (int):
-            the maximum number of messages buffered before.
+        max_buffered_msgs (`int`):
+            the maximum number of messages buffered internally.
 
         on_agent_status_changed (func, optional):
             callback to receive notification on the iottly agent status.
@@ -78,6 +78,61 @@ class IottlySDK:
 
         self._sdk_stopped = Event()
 
+    def subscribe(self, cmd_type, callback):
+        """Subscribe to specific command received from the iottly-agent.
+
+        After subscribing a callback for a command type, the iottly SDK is
+        notified each time the **iottly agent** receives a message for the
+        particular command.
+
+        The `callback` will be invoked with a dict containing the
+        command parameters.
+
+        .. note:: If you call `subscribe` with a `cmd_type` already registered the callback is overwritten.
+
+        Args:
+            `cmd_type` (`str`):
+                The string denoting a particular type of command.
+            `callback` (func or callable):
+                The callback invoked when a message of type `cmd_type` is received from the **iottly agent**
+
+        Raises:
+            TypeError:
+                The method was invoked with an argument of wrong type.
+        """
+        if not isinstance(cmd_type, six.string_types):
+            # Typecheck cmd_type (python2 compatible)
+            err = 'cmd_type must be a string but {} was given.'.format(type(cmd_type))
+            raise TypeError(err)
+
+        if not six.callable(callback):
+            # Typecheck cmd_type (python2 compatible)
+            err = 'callback must be a callable but {} was given.'.format(type(cmd_type))
+            raise TypeError(err)
+
+        self._cmd_callbacks[cmd_type] = self._wrapped_cb_execution(callback)
+
+    def start(self):
+        """Connect to the iottly agent.
+        """
+        # Start the thread that receive messages from the iottly agent
+        self._receiver_t = Thread(target=self._receive_msgs_from_agent,
+                                    name='receiver_t')
+        self._receiver_t.daemon = True
+        self._receiver_t.start()
+        # Start the thread that keep the buffer size at bay
+        self._drainer_t = Thread(target=self._drain_buffer, name='drainer_t')
+        self._drainer_t.daemon = True
+        self._drainer_t.start()
+        # Start the thread that send messages to the iottly agent
+        self._consumer_t = Thread(target=self._consume_buffer, name='sender_t')
+        self._consumer_t.daemon = True
+        self._consumer_t.start()
+        # Start the thread that connect the iottly agent
+        self._connection_t = Thread(target=self._connect_to_agent,
+                                    name='connection_t')
+        self._connection_t.daemon = True
+        self._connection_t.start()
 
     def send(self, msg):
         """Sends a message to iottly.
@@ -123,64 +178,6 @@ class IottlySDK:
             with self._buffer_full:
                 self._buffer_full.notify()
             self._buffer.put(payload) # en-queue the msg blocking
-
-
-    def subscribe(self, cmd_type, callback):
-        """Subscribe to specific command received from the iottly-agent.
-
-        After subscribing a callback for a command type, the iottly SDK is
-        notified each time the **iottly agent** receives a message for the
-        particular command.
-
-        The `callback` will be invoked with a dict containing the
-        command parameters.
-
-        .. note:: If you call `subscribe` with a `cmd_type` already registered the callback is overwritten.
-
-        Args:
-            `cmd_type` (`str`):
-                The string denoting a particular type of command.
-            `callback` (func or callable):
-                The callback invoked when a message of type `cmd_type` is received from the **iottly agent**
-
-        Raises:
-            TypeError:
-                The method was invoked with an argument of wrong type.
-        """
-        if not isinstance(cmd_type, six.string_types):
-            # Typecheck cmd_type (python2 compatible)
-            err = 'cmd_type must be a string but {} was given.'.format(type(cmd_type))
-            raise TypeError(err)
-
-        if not six.callable(callback):
-            # Typecheck cmd_type (python2 compatible)
-            err = 'callback must be a callable but {} was given.'.format(type(cmd_type))
-            raise TypeError(err)
-
-        self._cmd_callbacks[cmd_type] = self._wrapped_cb_execution(callback)
-
-
-    def start(self):
-        """Connect to the iottly agent.
-        """
-        # Start the thread that receive messages from the iottly agent
-        self._receiver_t = Thread(target=self._receive_msgs_from_agent,
-                                    name='receiver_t')
-        self._receiver_t.daemon = True
-        self._receiver_t.start()
-        # Start the thread that keep the buffer size at bay
-        self._drainer_t = Thread(target=self._drain_buffer, name='drainer_t')
-        self._drainer_t.daemon = True
-        self._drainer_t.start()
-        # Start the thread that send messages to the iottly agent
-        self._consumer_t = Thread(target=self._consume_buffer, name='sender_t')
-        self._consumer_t.daemon = True
-        self._consumer_t.start()
-        # Start the thread that connect the iottly agent
-        self._connection_t = Thread(target=self._connect_to_agent,
-                                    name='connection_t')
-        self._connection_t.daemon = True
-        self._connection_t.start()
 
     def stop(self):
         """Convenience method to stop the sdk threads and perform cleanup
