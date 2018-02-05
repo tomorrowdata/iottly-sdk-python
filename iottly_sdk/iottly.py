@@ -19,7 +19,7 @@ class IottlySDK:
         socket_path (str):
             the path to the unix-socket exposed by the iottly agent.
 
-        max_bufferd_msgs (int):
+        max_buffered_msgs (int):
             the maximum number of messages buffered before.
 
         on_agent_status_changed (func, optional):
