@@ -51,6 +51,7 @@ class IottlySDK:
         # The queue holding the window buffer for incoming messages
         # up to self._max_buffered_msgs messages
         self._buffer = Queue(maxsize=self._max_buffered_msgs)
+        self._buffer_full = Condition()
 
         # Conditions and state mgmt
         self._socket_state_lock = Lock()
@@ -60,8 +61,6 @@ class IottlySDK:
         self._agent_linked = False
         # The unix socket to communicate with the iottly agent
         self._socket = None
-
-        self._buffer_full = Condition()
 
         # Pre-computed messages (JSON strings)
         # NOTE literal curly braces are double-up to use format spec-language
