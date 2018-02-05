@@ -90,7 +90,7 @@ class IottlySDK(unittest.TestCase):
         sdk.stop()
         agent_status_cb.assert_has_calls([call('started'), call('stopped')])
 
-    def test_receiving_stopping_signal_from_server(self):
+    def test_receiving_stopping_signal_from_agent(self):
         server_started = multiprocessing.Event()
         client_connected = multiprocessing.Event()
         def on_connect(s):
@@ -112,6 +112,31 @@ class IottlySDK(unittest.TestCase):
 
         time.sleep(0.6)  # give some time
         agent_status_cb.assert_has_calls([call('started'), call('stopping'), call('stopped')])
+        sdk.stop()
+
+    def test_receiving_connection_status_signalling_from_agent(self):
+        server_started = multiprocessing.Event()
+        client_connected = multiprocessing.Event()
+        def on_connect(s):
+            s.send(b'{"signal": {"connectionstatus": "disconnected"}}\n')
+            s.send(b'{"signal": {"connectionstatus": "connected"}}\n')
+            client_connected.set()
+        server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
+        server.start()
+        try:
+            server_started.wait(2.0)
+        except TimeoutError:
+            self.fail('cannot start server')
+        conn_status_cb = Mock()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path,
+                                on_connection_status_changed=conn_status_cb)
+        sdk.start()
+        client_connected.wait(2.0)
+        server.stop()
+
+        time.sleep(0.6)  # give some time
+        conn_status_cb.assert_has_calls([call('disconnected'),call('connected')])
         sdk.stop()
 
     def test_sending_msg_to_agent(self):

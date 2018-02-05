@@ -41,7 +41,7 @@ class IottlySDK:
         self._socket_path = socket_path
         self._max_buffered_msgs = max_buffered_msgs
         self._on_agent_status_changed_cb = on_agent_status_changed
-        self._on_connection_status_changed_cb = on_agent_status_changed
+        self._on_connection_status_changed_cb = on_connection_status_changed
 
         # Threads references
         self._consumer_t = None
@@ -322,6 +322,9 @@ class IottlySDK:
         if 'agentstatus' in signal:
             status = signal['agentstatus']  # TODO validate status
             self._on_agent_status_changed_cb(status)
+        elif 'connectionstatus' in signal:
+            status = signal['connectionstatus']  # TODO validate status
+            self._on_connection_status_changed_cb(status)
         else:
             # TODO handle invalid signal
             pass
