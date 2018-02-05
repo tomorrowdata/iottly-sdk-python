@@ -110,17 +110,21 @@ class IottlySDK:
         """
         # Start the thread that receive messages from the iottly agent
         self._receiver_t = Thread(target=self._receive_msgs_from_agent,
-                                    name='receiver')
+                                    name='receiver_t')
+        self._receiver_t.daemon = True
         self._receiver_t.start()
         # Start the thread that keep the buffer size at bay
-        self._drainer_t = Thread(target=self._drain_buffer, name='drainer')
+        self._drainer_t = Thread(target=self._drain_buffer, name='drainer_t')
+        self._drainer_t.daemon = True
         self._drainer_t.start()
         # Start the thread that send messages to the iottly agent
-        self._consumer_t = Thread(target=self._consume_buffer, name='consumer')
+        self._consumer_t = Thread(target=self._consume_buffer, name='sender_t')
+        self._consumer_t.daemon = True
         self._consumer_t.start()
         # Start the thread that connect the iottly agent
         self._connection_t = Thread(target=self._connect_to_agent,
-                                    name='connection')
+                                    name='connection_t')
+        self._connection_t.daemon = True
         self._connection_t.start()
 
     def stop(self):
