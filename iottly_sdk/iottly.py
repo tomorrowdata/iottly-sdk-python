@@ -25,11 +25,39 @@ import json
 class IottlySDK:
     """Class handling interactions with the iottly-agent
 
-    ...
+    After initializing the SDK it is possible to:
+
+    - Register **callbacks** that will be called when a particular type of
+      message is received from the **iottly agent**.
+    - Send messages to **iottly** through the **iottly agent**
+
+    The SDK is initialized with a `name` that will identify your application
+    in your **iottly** project.
+
+    Optionally you can provide 2 callbacks to the `IottlySDK` constructor:
+
+        - `on_agent_status_changed`: that will be called when the SDK connect
+            and disconnect from the **iottly agent**.
+            This callback will receive a string argument of:
+
+            - `started`: if the sdk is successfully linked with the **iottly agent**
+            - `stopping`: if the **iottly agent** is going through a scheduled reboot
+            - `stopped`: if the sdk is disconnected from the **iottly agent**
+        - `on_connection_status_changed`: that will be called when the **iottly agent**
+            has sent a notification on a change in the MQTT connectivity of the
+            device.
+            This callback will receive a string argument of:
+
+            - `connected`: MQTT is up in the linked **iottly agent**
+            - `disconnected`: MQTT is down in the linked **iottly agent**
+                (messages sent with the iottly agent while disconnected will be
+                bufferd internally)q
 
     Args:
         name (`str`):
             an identifier for the connected application.
+
+    Keyword Args:
         socket_path (`str`):
             the path to the unix-socket exposed by the iottly agent.
 
@@ -431,7 +459,14 @@ def _read_msg_from_socket(socket, msg_buf):
                 # we have a new message
                 msg = b''.join(msg_buf[:i]) + chunck
                 if next_buf:
-                    msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    # NOTE Python 3.4 compatibility
+                    # feature introduced in Python 3.5
+                    # https://www.python.org/dev/peps/pep-0448/
+                    #
+                    # msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    tmp = msg_buf[i+1:]
+                    msg_buf[0] = next_buf
+                    msg_buf[1:] = tmp[:]
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 # Update indexes

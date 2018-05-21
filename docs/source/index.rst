@@ -3,20 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to iottly-sdk's documentation!
+Python SDK iottly
 ======================================
+
+Classes
+--------------------------
+
+.. currentmodule:: iottly_sdk.iottly
+.. autoclass:: IottlySDK
+    :members: subscribe, start, send
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
-   modules
-   iottly_sdk
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

@@ -9,7 +9,7 @@ class UDSStubServer:
     def __init__(self, socket_path, on_bind=None, on_connect=None):
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.socket.bind(socket_path)
-        self.socket.listen()
+        self.socket.listen(4)  # backlog arg required in Py < 3.5
         if on_bind:
             on_bind()
         self.on_client_connected_cb = on_connect
