@@ -459,7 +459,12 @@ def _read_msg_from_socket(socket, msg_buf):
                 # we have a new message
                 msg = b''.join(msg_buf[:i]) + chunck
                 if next_buf:
-                    msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    # NOTE Python 3.4 compatibility
+                    # feature introduced in Python 3.5
+                    # https://www.python.org/dev/peps/pep-0448/
+                    #
+                    # msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    msg_buf[:] = next_buf.extend(msg_buf[i+1:])
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 # Update indexes

@@ -20,7 +20,11 @@ def read_msg_from_socket(socket, msg_buf):
                 # we have a new message
                 msg = b''.join(msg_buf[:i]) + chunck
                 if next_buf:
-                    msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    # msg_buf[:] = next_buf, * msg_buf[i+1:]
+                    # Compatobility with Py 3.4
+                    tmp = msg_buf[i+1:]
+                    msg_buf[:] = next_buf
+                    msg_buf[i+1:] = tmp
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 return msg
