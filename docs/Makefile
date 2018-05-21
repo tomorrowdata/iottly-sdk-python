@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = iottly-sdk
 SOURCEDIR     = source
-BUILDDIR      = build
+BUILDDIR      = ../../iottly-sdk-python-docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
