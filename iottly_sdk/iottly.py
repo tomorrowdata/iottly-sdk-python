@@ -464,7 +464,9 @@ def _read_msg_from_socket(socket, msg_buf):
                     # https://www.python.org/dev/peps/pep-0448/
                     #
                     # msg_buf[:] = next_buf, * msg_buf[i+1:]
-                    msg_buf[:] = next_buf.extend(msg_buf[i+1:])
+                    tmp = msg_buf[i+1:]
+                    msg_buf[0] = next_buf
+                    msg_buf[1:] = tmp[:]
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 # Update indexes

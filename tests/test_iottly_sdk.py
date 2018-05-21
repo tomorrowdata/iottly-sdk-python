@@ -23,8 +23,8 @@ def read_msg_from_socket(socket, msg_buf):
                     # msg_buf[:] = next_buf, * msg_buf[i+1:]
                     # Compatobility with Py 3.4
                     tmp = msg_buf[i+1:]
-                    msg_buf[:] = next_buf
-                    msg_buf[i+1:] = tmp
+                    msg_buf[0] = next_buf
+                    msg_buf[1:] = tmp[:]
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 return msg
