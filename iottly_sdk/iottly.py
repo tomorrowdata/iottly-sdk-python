@@ -118,6 +118,7 @@ class IottlySDK:
         # NOTE Since the data msg template will be later proessed with format
         # the curly brace are quadruplicated {{{{ -> {{ -> {
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
+        self._data_chan_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}, "channel": "{}"}}}}}}}}\n'.format(self._name, '{}', '{}')
         self._err_msg = '{{{{"signal": {{{{"sdkclient": {{{{"name": "{}", "error": {}}}}}}}}}}}}}\n'.format(self._name, '{}')
 
         # Lookup-table (cmd_type -> callback)
@@ -182,7 +183,7 @@ class IottlySDK:
         self._connection_t.daemon = True
         self._connection_t.start()
 
-    def send(self, msg):
+    def send(self, msg, channel=None):
         """Sends a message to iottly.
 
         Use this method for sending a message to iottly through
@@ -198,6 +199,11 @@ class IottlySDK:
         Args:
             msg (`dict`):
                 The data to be sent. The `dict` should be JSON-serializable.
+            channel (`str`):
+                The channel to which the message will be forwarded.
+                This can be used, for example, to route traffic to
+                a specific webhook.
+                Default to None
 
         Raises:
             TypeError:
@@ -318,7 +324,7 @@ class IottlySDK:
                         # netwrok encoded (bytes)
                         payload = data
                     else:
-                        payload = self._msg_serialize(data)
+                        payload = self._msg_serialize(data, channel)
                     socket.sendall(payload)
                     # the message was forwarded
                     sent = True
@@ -417,9 +423,12 @@ class IottlySDK:
             # TODO handle invalid commands
             pass
 
-    def _msg_serialize(self, msg):
+    def _msg_serialize(self, msg, channel=None):
         # Prepare message to be sent on a socket
-        return self._data_msg.format(json.dumps(msg)).encode()
+        if channel:
+            return self._data_chan_msg.format(json.dumps(msg), channel).encode()
+        else:
+            return self._data_msg.format(json.dumps(msg)).encode()
 
     def _wrapped_cb_execution(self, f):
         """Wrap callback execution and send error to agent.
