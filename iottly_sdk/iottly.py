@@ -17,10 +17,17 @@ import six
 import os
 import socket
 import time
+from collections import namedtuple
 from functools import wraps
 from threading import Thread, Condition, Event, Lock
 from queue import Queue, Full
 import json
+
+
+# Define named tuple to represent msg and metadata in the
+# internal buffer
+Msg = namedtuple('Msg', ['payload', 'type', 'channel'])
+
 
 class IottlySDK:
     """Class handling interactions with the iottly-agent
@@ -207,7 +214,7 @@ class IottlySDK:
         except TypeError as e:
             raise ValueError('Given msg is not JSON-serializable.')
 
-        payload = (msg, False)  # denote a data payload
+        payload = Msg(payload=msg, type=False, channel=channel)  # denote a data payload
         try:
             self._buffer.put(payload, False)  # en-queue the msg non-blocking
         except Full:
@@ -266,7 +273,7 @@ class IottlySDK:
                 if self._on_agent_status_changed_cb:
                     self._on_agent_status_changed_cb('started')
                 # Send notification of connected app to the iottly agent
-                self._buffer.put((self._app_start_msg, True))  # Signalling
+                self._buffer.put(Msg(self._app_start_msg, True, None))  # Signalling
                 # Notify the other threads that require the connection
                 self._disconnected_from_agent.clear()
                 self._connected_to_agent.notifyAll()
@@ -305,7 +312,7 @@ class IottlySDK:
                             break
                         continue  # re-acquire the socket (None)
                 try:
-                    data, is_signal = msg
+                    data, is_signal, channel = msg
                     if is_signal:
                         # Signalling data is already JSON formatted and
                         # netwrok encoded (bytes)
@@ -430,7 +437,11 @@ class IottlySDK:
                     'msg': str(exc)
                 })
                 # Format signal message
-                exc_msg = (self._err_msg.format(exc_dump).encode(), True)
+                exc_msg = Msg(
+                    payload=self._err_msg.format(exc_dump).encode(),
+                    type=True,
+                    channel=None
+                )
                 self._buffer.put(exc_msg)  # En-quque msg blocking
 
         return wrapper
