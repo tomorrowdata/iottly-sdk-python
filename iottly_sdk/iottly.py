@@ -215,6 +215,10 @@ class IottlySDK:
             err = 'msg must be a dict but {} was given.'.format(type(msg))
             raise TypeError(err)
 
+        if channel and not isinstance(channel, str):
+            err = 'channel must be a str but {} was given.'.format(type(channel))
+            raise TypeError(err)
+
         try:
             json.dumps(msg)
         except TypeError as e:

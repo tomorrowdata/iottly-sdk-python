@@ -13,6 +13,12 @@ class TestIottlySDKApiArgTypes(unittest.TestCase):
         with self.assertRaises(ValueError):
             sdk.send({"test": set()})
 
+    def test_send_to_channel_args(self):
+        sdk = IottlySDK('test app')
+
+        with self.assertRaises(TypeError):
+            sdk.send({"test": "foobar"}, channel=1234)
+
     def test_subscribe_args(self):
         sdk = IottlySDK('test app')
 
