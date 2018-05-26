@@ -283,6 +283,16 @@ class IottlySDK:
                         s.close()
                         time.sleep(0.2)
                         continue
+                except IOError as e:
+                    if e.errno == errno.ENOENT:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+                    else:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+
                 self._socket = s
                 self._agent_linked = True
                 # Exec callback
