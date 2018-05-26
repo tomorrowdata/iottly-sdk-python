@@ -14,7 +14,7 @@
 
 import six
 
-import os
+import os, errno
 import socket
 import time
 from collections import namedtuple
@@ -25,7 +25,7 @@ try:
 except:
     #python 2.7
     from Queue import Queue, Full
-    
+
 import json
 
 
@@ -274,14 +274,15 @@ class IottlySDK:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
-                except ConnectionRefusedError:
-                    s.close()
-                    time.sleep(0.2)
-                    continue
                 except OSError as e:
-                    s.close()
-                    time.sleep(0.2)
-                    continue
+                    if e.errno == errno.ECONNREFUSED:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+                    else:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
                 self._socket = s
                 self._agent_linked = True
                 # Exec callback
