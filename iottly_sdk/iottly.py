@@ -20,7 +20,12 @@ import time
 from collections import namedtuple
 from functools import wraps
 from threading import Thread, Condition, Event, Lock
-from queue import Queue, Full
+try:
+    from queue import Queue, Full
+except:
+    #python 2.7
+    from Queue import Queue, Full
+    
 import json
 
 
