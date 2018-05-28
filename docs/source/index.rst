@@ -9,23 +9,23 @@ Python SDK iottly
 Installation
 --------------------------
 If you are using Python 3.4.x make sure to install at least version
-**1.0.1** of the **iottly-sdk**
+**1.1.0** of the **iottly-sdk**
 
 
 Installing using pip (recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-  pip3 install https://github.com/tomorrowdata/iottly-sdk-python/archive/1.0.1.tar.gz
+  sudo pip3 install https://github.com/tomorrowdata/iottly-sdk-python/archive/1.1.0.tar.gz
 
-Installing using setuptools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+or Installing using setuptools
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-  wget -O iottly-sdk-python-1.0.1 https://github.com/tomorrowdata/iottly-sdk-python/archive/1.0.1.tar.gz
-  tar -xzf iottly-sdk-python-1.0.1 -C /tmp
-  cd /tmp/iottly-sdk-python-1.0.1
-  python3 setup.py install
+  wget -O iottly-sdk-python-1.1.0.tar.gz https://github.com/tomorrowdata/iottly-sdk-python/archive/1.1.0.tar.gz
+  tar -xzf iottly-sdk-python-1.1.0.tar.gz -C /tmp
+  cd /tmp/iottly-sdk-python-1.1.0
+  sudo python3 setup.py install
 
 
 Classes

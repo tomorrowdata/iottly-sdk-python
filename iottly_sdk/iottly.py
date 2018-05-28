@@ -17,10 +17,17 @@ import six
 import os
 import socket
 import time
+from collections import namedtuple
 from functools import wraps
 from threading import Thread, Condition, Event, Lock
 from queue import Queue, Full
 import json
+
+
+# Define named tuple to represent msg and metadata in the
+# internal buffer
+Msg = namedtuple('Msg', ['payload', 'type', 'channel'])
+
 
 class IottlySDK:
     """Class handling interactions with the iottly-agent
@@ -111,6 +118,7 @@ class IottlySDK:
         # NOTE Since the data msg template will be later proessed with format
         # the curly brace are quadruplicated {{{{ -> {{ -> {
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
+        self._data_chan_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}, "channel": "{}"}}}}}}}}\n'.format(self._name, '{}', '{}')
         self._err_msg = '{{{{"signal": {{{{"sdkclient": {{{{"name": "{}", "error": {}}}}}}}}}}}}}\n'.format(self._name, '{}')
 
         # Lookup-table (cmd_type -> callback)
@@ -175,7 +183,7 @@ class IottlySDK:
         self._connection_t.daemon = True
         self._connection_t.start()
 
-    def send(self, msg):
+    def send(self, msg, channel=None):
         """Sends a message to iottly.
 
         Use this method for sending a message to iottly through
@@ -191,6 +199,11 @@ class IottlySDK:
         Args:
             msg (`dict`):
                 The data to be sent. The `dict` should be JSON-serializable.
+            channel (`str`):
+                The channel to which the message will be forwarded.
+                This can be used, for example, to route traffic to
+                a specific webhook.
+                Default to None
 
         Raises:
             TypeError:
@@ -202,12 +215,16 @@ class IottlySDK:
             err = 'msg must be a dict but {} was given.'.format(type(msg))
             raise TypeError(err)
 
+        if channel and not isinstance(channel, str):
+            err = 'channel must be a str but {} was given.'.format(type(channel))
+            raise TypeError(err)
+
         try:
             json.dumps(msg)
         except TypeError as e:
             raise ValueError('Given msg is not JSON-serializable.')
 
-        payload = (msg, False)  # denote a data payload
+        payload = Msg(payload=msg, type=False, channel=channel)  # denote a data payload
         try:
             self._buffer.put(payload, False)  # en-queue the msg non-blocking
         except Full:
@@ -266,7 +283,7 @@ class IottlySDK:
                 if self._on_agent_status_changed_cb:
                     self._on_agent_status_changed_cb('started')
                 # Send notification of connected app to the iottly agent
-                self._buffer.put((self._app_start_msg, True))  # Signalling
+                self._buffer.put(Msg(self._app_start_msg, True, None))  # Signalling
                 # Notify the other threads that require the connection
                 self._disconnected_from_agent.clear()
                 self._connected_to_agent.notifyAll()
@@ -305,13 +322,13 @@ class IottlySDK:
                             break
                         continue  # re-acquire the socket (None)
                 try:
-                    data, is_signal = msg
+                    data, is_signal, channel = msg
                     if is_signal:
                         # Signalling data is already JSON formatted and
                         # netwrok encoded (bytes)
                         payload = data
                     else:
-                        payload = self._msg_serialize(data)
+                        payload = self._msg_serialize(data, channel)
                     socket.sendall(payload)
                     # the message was forwarded
                     sent = True
@@ -410,9 +427,12 @@ class IottlySDK:
             # TODO handle invalid commands
             pass
 
-    def _msg_serialize(self, msg):
+    def _msg_serialize(self, msg, channel=None):
         # Prepare message to be sent on a socket
-        return self._data_msg.format(json.dumps(msg)).encode()
+        if channel:
+            return self._data_chan_msg.format(json.dumps(msg), channel).encode()
+        else:
+            return self._data_msg.format(json.dumps(msg)).encode()
 
     def _wrapped_cb_execution(self, f):
         """Wrap callback execution and send error to agent.
@@ -430,7 +450,11 @@ class IottlySDK:
                     'msg': str(exc)
                 })
                 # Format signal message
-                exc_msg = (self._err_msg.format(exc_dump).encode(), True)
+                exc_msg = Msg(
+                    payload=self._err_msg.format(exc_dump).encode(),
+                    type=True,
+                    channel=None
+                )
                 self._buffer.put(exc_msg)  # En-quque msg blocking
 
         return wrapper

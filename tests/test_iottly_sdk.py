@@ -165,6 +165,30 @@ class IottlySDK(unittest.TestCase):
             sdk.stop()
             server.stop()
 
+    def test_sending_msg_to_agent_with_channel(self):
+        cb_called = multiprocessing.Event()
+        def read_msg(s):
+            msg_buf = []
+            _ = read_msg_from_socket(s,msg_buf) # 1st msg in signal
+            msg = read_msg_from_socket(s,msg_buf)
+            expected_msg = '{"data": {"sdkclient": {"name": "testapp"}, "payload": {"test_metric": "test data"}, "channel": "test"}}'
+            self.assertEqual(expected_msg, msg.decode())
+            cb_called.set()
+        server = UDSStubServer(self.socket_path, on_connect=read_msg)
+        server.start()
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.start()
+        time.sleep(0.7)
+        sdk.send({'test_metric': 'test data'}, channel='test')
+        try:
+            cb_called.wait(1.0)
+            self.assertTrue(cb_called.is_set())
+        except TimeoutError:
+            self.fail('Server doesn\'t received any connection')
+        finally:
+            sdk.stop()
+            server.stop()
+
     def test_registering_callback_for_message_type(self):
         server_started = multiprocessing.Event()
         client_connected = multiprocessing.Event()
