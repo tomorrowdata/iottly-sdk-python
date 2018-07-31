@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PYTHON="python3"
+PYTHON="python"
 
 $PYTHON setup.py install
 

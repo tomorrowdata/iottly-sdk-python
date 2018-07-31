@@ -1,5 +1,6 @@
 
 import socket
+from  contextlib import closing  # Used for Python2 compatibility
 from multiprocessing import Process, Event
 
 
@@ -22,7 +23,7 @@ class UDSStubServer:
             except OSError:
                 # Socket closed
                 break  # exit
-            with client_sock:
+            with closing(client_sock):
                 if self.on_client_connected_cb:
                     self.on_client_connected_cb(client_sock)
 

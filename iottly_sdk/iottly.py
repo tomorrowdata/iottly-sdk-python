@@ -348,7 +348,9 @@ class IottlySDK:
                     socket.sendall(payload)
                     # the message was forwarded
                     sent = True
-                except OSError:
+                except (OSError, IOError):
+                    # OSError is the base class for socket.error in Py => 3.3
+                    # IOError is the base class for socket.error in Py => 2.6
                     # Wait for the connection to be re established
                     with self._connected_to_agent:
                         self._connected_to_agent.wait()
@@ -487,7 +489,9 @@ def _read_msg_from_socket(socket, msg_buf):
                 return None
             else:
                 msg_buf.append(buf)
-        except OSError:
+        except (OSError, IOError):
+            # OSError is the base class for socket.error in Py => 3.3
+            # IOError is the base class for socket.error in Py => 2.6
             return None
         # Extract messages
         i = 0

@@ -1,5 +1,8 @@
 import unittest
-from unittest.mock import Mock, call
+try:
+    from unittest.mock import Mock, call
+except ImportError:
+    from mock.mock import Mock, call
 
 from iottly_sdk.iottly import _read_msg_from_socket
 
