@@ -1,8 +1,21 @@
+from __future__ import absolute_import
 import unittest
-from unittest.mock import Mock, call
+
+try:
+    from unittest.mock import Mock, call
+except ImportError:
+    from mock.mock import Mock, call
+    # Handle __name__ attribute for Mock in Python2
+    _Mock = Mock
+    def mock_wrapper(name='', **kwargs):
+        m = _Mock(**kwargs)
+        m.__name__ = name
+        return m
+    Mock = mock_wrapper
 
 import os
 import time
+import shutil
 import tempfile
 import multiprocessing
 
@@ -39,11 +52,20 @@ def read_msg_from_socket(socket, msg_buf):
 class IottlySDK(unittest.TestCase):
 
     def setUp(self):
-        self.sock_dir = tempfile.TemporaryDirectory()
-        self.socket_path = socket_path = os.path.join(self.sock_dir.name, 'test_socket')
+        try:
+            self.sock_dir = tempfile.TemporaryDirectory()
+            self.socket_path = os.path.join(self.sock_dir.name, 'test_socket')
+        except AttributeError:
+            # Python 2.7
+            self.sock_dir = tempfile.mkdtemp()
+            self.socket_path = os.path.join(self.sock_dir, 'test_socket')
 
     def tearDown(self):
-        self.sock_dir.cleanup()
+        try:
+            self.sock_dir.cleanup()
+        except AttributeError:
+            # Python 2.7
+            shutil.rmtree(self.sock_dir)
 
     def test_connection_with_running_server(self):
         server_started = multiprocessing.Event()
@@ -57,16 +79,18 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2)
-        except TimeoutError:
-            pass
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                pass
         self.assertTrue(os.path.exists(self.socket_path))
         sdk = iottly.IottlySDK('testapp', self.socket_path)
         sdk.start()
         try:
             cb_called.wait(1.0)
             self.assertTrue(cb_called.is_set())
-        except TimeoutError:
-            self.fail('Server doesn\'t received any connection')
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('Server doesn\'t received any connection')
         finally:
             sdk.stop()
             server.stop()
@@ -80,9 +104,10 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
-        agent_status_cb = Mock()
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
+        agent_status_cb = Mock(name='agent_status_cb')
 
         sdk = iottly.IottlySDK('testapp', self.socket_path,
                                 on_agent_status_changed=agent_status_cb)
@@ -103,9 +128,10 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
-        agent_status_cb = Mock()
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
+        agent_status_cb = Mock(name='agent_status_cb')
 
         sdk = iottly.IottlySDK('testapp', self.socket_path,
                                 on_agent_status_changed=agent_status_cb)
@@ -128,9 +154,10 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
-        conn_status_cb = Mock()
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
+        conn_status_cb = Mock(name='conn_status_cb')
 
         sdk = iottly.IottlySDK('testapp', self.socket_path,
                                 on_connection_status_changed=conn_status_cb)
@@ -159,8 +186,9 @@ class IottlySDK(unittest.TestCase):
         try:
             cb_called.wait(1.0)
             self.assertTrue(cb_called.is_set())
-        except TimeoutError:
-            self.fail('Server doesn\'t received any connection')
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('Server doesn\'t received any connection')
         finally:
             sdk.stop()
             server.stop()
@@ -183,8 +211,9 @@ class IottlySDK(unittest.TestCase):
         try:
             cb_called.wait(1.0)
             self.assertTrue(cb_called.is_set())
-        except TimeoutError:
-            self.fail('Server doesn\'t received any connection')
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('Server doesn\'t received any connection')
         finally:
             sdk.stop()
             server.stop()
@@ -199,9 +228,10 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
-        cmd_cb = Mock()
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
+        cmd_cb = Mock(name='cmd_cb')
 
         sdk = iottly.IottlySDK('testapp', self.socket_path)
         sdk.subscribe('echo', cmd_cb)
@@ -225,9 +255,10 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
-        cmd_cb = Mock()
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
+        cmd_cb = Mock(name='cmd_cb')
 
         sdk = iottly.IottlySDK('testapp', self.socket_path)
         sdk.subscribe('echo', cmd_cb)
@@ -254,8 +285,9 @@ class IottlySDK(unittest.TestCase):
         server.start()
         try:
             server_started.wait(2.0)
-        except TimeoutError:
-            self.fail('cannot start server')
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('cannot start server')
         cmd_cb = Mock(side_effect=ValueError('exception in cb'))
 
         sdk = iottly.IottlySDK('testapp', self.socket_path)

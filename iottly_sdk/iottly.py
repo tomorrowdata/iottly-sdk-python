@@ -14,13 +14,18 @@
 
 import six
 
-import os
+import os, errno
 import socket
 import time
 from collections import namedtuple
 from functools import wraps
 from threading import Thread, Condition, Event, Lock
-from queue import Queue, Full
+try:
+    from queue import Queue, Full
+except:
+    #python 2.7
+    from Queue import Queue, Full
+
 import json
 
 
@@ -269,14 +274,25 @@ class IottlySDK:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
-                except ConnectionRefusedError:
-                    s.close()
-                    time.sleep(0.2)
-                    continue
                 except OSError as e:
-                    s.close()
-                    time.sleep(0.2)
-                    continue
+                    if e.errno == errno.ECONNREFUSED:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+                    else:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+                except IOError as e:
+                    if e.errno == errno.ENOENT:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+                    else:
+                        s.close()
+                        time.sleep(0.2)
+                        continue
+
                 self._socket = s
                 self._agent_linked = True
                 # Exec callback
@@ -332,7 +348,9 @@ class IottlySDK:
                     socket.sendall(payload)
                     # the message was forwarded
                     sent = True
-                except OSError:
+                except (OSError, IOError):
+                    # OSError is the base class for socket.error in Py => 3.3
+                    # IOError is the base class for socket.error in Py => 2.6
                     # Wait for the connection to be re established
                     with self._connected_to_agent:
                         self._connected_to_agent.wait()
@@ -471,7 +489,9 @@ def _read_msg_from_socket(socket, msg_buf):
                 return None
             else:
                 msg_buf.append(buf)
-        except OSError:
+        except (OSError, IOError):
+            # OSError is the base class for socket.error in Py => 3.3
+            # IOError is the base class for socket.error in Py => 2.6
             return None
         # Extract messages
         i = 0
