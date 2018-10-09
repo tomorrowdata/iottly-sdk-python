@@ -57,7 +57,7 @@ Classes
    :maxdepth: 2
    :caption: Contents:
 
-Chnagelog
+Changelog
 --------------------------
 
 .. versionadded:: 1.1.0
