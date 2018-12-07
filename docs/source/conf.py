@@ -111,6 +111,7 @@ html_sidebars = {
     '**': [
         'relations.html',  # needs 'show_related': True theme option to display
         'about.html',
+        'navigation.html',
     ]
 }
 

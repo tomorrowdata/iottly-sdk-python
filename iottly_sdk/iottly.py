@@ -424,6 +424,9 @@ class IottlySDK:
             status = signal['connectionstatus']  # TODO validate status
             self._on_connection_status_changed_cb(status)
         else:
+            #TODO add here the listen for a "sdkinit" signal that
+            # is exchanged with the agent after a start.
+
             # TODO handle invalid signal
             return
 
