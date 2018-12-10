@@ -1,0 +1,16 @@
+FROM python:3.7-alpine
+RUN mkdir -p /test
+ADD iottly_sdk/ /test/iottly_sdk/
+ADD tests/ /test/tests/
+ADD examples/ /test/examples/
+
+
+ADD setup.py /test/setup.py
+ADD setup.cfg /test/setup.cfg
+ADD README.rst /test/README.rst
+ADD LICENSE.txt /test/LICENSE.txt
+
+
+ADD tests_runner.sh /test
+
+WORKDIR /test/
