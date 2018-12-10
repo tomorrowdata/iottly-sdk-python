@@ -73,7 +73,8 @@ class IottlySDK(unittest.TestCase):
         def test_connection(s):
             msg_buf = []
             msg = read_msg_from_socket(s,msg_buf)
-            self.assertEqual('{"signal": {"sdkclient": {"name": "testapp", "status": "connected"}}}', msg.decode())
+            exp_msg = '{"signal": {"sdkclient": {"name": "testapp", "status": "connected", "version": "%s"}}}' % iottly.__version__
+            self.assertEqual(exp_msg, msg.decode())
             cb_called.set()
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=test_connection)
         server.start()

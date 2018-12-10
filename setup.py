@@ -10,6 +10,13 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Read the version from the project code
+version = {}
+with open(path.join(here,'iottly_sdk/version.py')) as fp:
+    exec(fp.read(), version)
+# Expose a __version__ variable
+__version__ = version['__version__']
+
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
@@ -33,7 +40,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.2.0',
+    version=__version__,
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
