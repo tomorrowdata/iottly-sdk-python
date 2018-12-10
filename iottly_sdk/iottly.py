@@ -117,6 +117,10 @@ class IottlySDK:
         self._agent_linked = False
         # The unix socket to communicate with the iottly agent
         self._socket = None
+        # The version of the attacched iottly agent
+        # iottly agent <= 1.8.0 doesn't provide a version.
+        self._agent_version_state_lock = Lock()
+        self._agent_version = None
 
         # Pre-computed messages (JSON strings)
         # NOTE literal curly braces are double-up to use format spec-language
@@ -425,11 +429,12 @@ class IottlySDK:
         elif 'connectionstatus' in signal:
             status = signal['connectionstatus']  # TODO validate status
             self._on_connection_status_changed_cb(status)
+        elif 'sdkinit' in signal:
+            version = signal['sdkinit']['version']
+            with self._agent_version_state_lock:
+                self._agent_version = version
         else:
-            #TODO add here the listen for a "sdkinit" signal that
-            # is exchanged with the agent after a start.
-
-            # TODO handle invalid signal
+            # NOTE ignore invalid signals to ensure retrocompatibility.
             return
 
     def _handle_cmd_from_agent(self, cmd):

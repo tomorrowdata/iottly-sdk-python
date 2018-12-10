@@ -96,6 +96,33 @@ class IottlySDK(unittest.TestCase):
             sdk.stop()
             server.stop()
 
+    def test_get_version_from_agent(self):
+        server_started = multiprocessing.Event()
+        cb_called = multiprocessing.Event()
+        def send_sdkinit_signal(s):
+            s.send(b'{"signal": {"sdkinit": {"version": "1.8.0"}}}\n')
+            cb_called.set()
+        server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=send_sdkinit_signal)
+        server.start()
+        try:
+            server_started.wait(2)
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                pass
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.start()
+        try:
+            cb_called.wait(1.0)
+            self.assertTrue(cb_called.is_set())
+            self.assertEqual('1.8.0', sdk._agent_version)
+        except OSError as e:
+            if e.errno == errno.ETIMEDOUT:
+                self.fail('Server doesn\'t received any connection')
+        finally:
+            sdk.stop()
+            server.stop()
+
     def test_connection_callback(self):
         server_started = multiprocessing.Event()
         client_connected = multiprocessing.Event()
