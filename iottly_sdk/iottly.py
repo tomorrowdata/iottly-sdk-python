@@ -117,6 +117,8 @@ class IottlySDK:
         self._agent_linked = False
         # The unix socket to communicate with the iottly agent
         self._socket = None
+        # Lock to serialize writes to the socket
+        self._socket_write_lock = Lock()
         # The version of the attacched iottly agent
         # iottly agent <= 1.8.0 doesn't provide a version.
         self._agent_version_state_lock = Lock()
@@ -351,7 +353,7 @@ class IottlySDK:
                         payload = data
                     else:
                         payload = self._msg_serialize(data, channel)
-                    socket.sendall(payload)
+                    self._send_msg_through_socket(payload)
                     # the message was forwarded
                     sent = True
                 except (OSError, IOError):
@@ -363,6 +365,16 @@ class IottlySDK:
                     # Check the exit condition on resume
                     if self._sdk_stopped.is_set():
                         break
+
+    def _send_msg_through_socket(self, payload):
+        """Send messages through the socket after acquiring a shared lock.
+        This avoid possible interleaving between threads. Messages are
+        sezialized as they should.
+        All raised errors are propagated to the callers which should act upon
+        accordingly to their specific semantic.
+        """
+        with self._socket_write_lock:
+            self._socket.sendall(payload)
 
     def _drain_buffer(self):
         """Keep the internal buffer at bay.
