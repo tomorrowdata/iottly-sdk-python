@@ -22,7 +22,7 @@ import multiprocessing
 from stubs.agent_server import UDSStubServer
 
 from iottly_sdk import iottly
-
+from iottly_sdk.errors import DisconnectedSDK, InvalidAgentVersion
 
 def read_msg_from_socket(socket, msg_buf):
     go_on = True
@@ -329,3 +329,47 @@ class IottlySDK(unittest.TestCase):
             self.assertEqual(1, cmd_cb.call_count)
         finally:
             sdk.stop()
+
+    def test_call_agent_with_disconnected_sdk_and_unknown_version(self):
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.start()
+
+        with self.assertRaises(InvalidAgentVersion):
+            sdk.call_agent('echo')
+
+    def test_call_agent_with_disconnected_sdk(self):
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.start()
+        sdk._agent_version = '1.8.6'
+
+        with self.assertRaises(DisconnectedSDK):
+            sdk.call_agent('echo')
+
+    def test_call_agent(self):
+        cb_called = multiprocessing.Event()
+        def read_msg(s):
+            msg_buf = []
+            _ = read_msg_from_socket(s,msg_buf) # 1st msg in signal
+            msg = read_msg_from_socket(s,msg_buf)
+            self.assertEqual('{"signal": {"sdkclient": {"name": "testapp", "call": {"user_cmd": {"arg1": "foo"}}}}}', msg.decode())
+            cb_called.set()
+        server = UDSStubServer(self.socket_path, on_connect=read_msg)
+        server.start()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        sdk.start()
+        sdk._agent_version = '1.8.0'
+
+        # This sleep guarantee that the call_agent sends data through the socket
+        # after the initial version hand-shake. This is not required at runtime
+        # because `call_agent` required the agent version to be set.
+        time.sleep(0.5)
+        sdk.call_agent('user_cmd', {'arg1': 'foo'})
+        sdk.send({'test': 'foo'})
+
+        if not cb_called.wait(1.0):
+            server.stop()
+            self.fail('Server doesn\'t received any connection')
+
+        sdk.stop()
+        server.stop()

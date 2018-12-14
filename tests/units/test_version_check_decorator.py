@@ -1,5 +1,6 @@
 import unittest
-from iottly_sdk.utils import min_agent_version, InvalidAgentVersion
+from iottly_sdk.utils import min_agent_version
+from iottly_sdk.errors import InvalidAgentVersion
 
 class TestVersionCheckDecorator(unittest.TestCase):
 

@@ -30,6 +30,8 @@ import json
 
 # Import the SDK version number
 from .version import __version__
+from .utils import min_agent_version
+from .errors import DisconnectedSDK
 
 # Define named tuple to represent msg and metadata in the
 # internal buffer
@@ -133,6 +135,7 @@ class IottlySDK:
         self._data_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}}}}}}}}}\n'.format(self._name, '{}')
         self._data_chan_msg = '{{{{"data": {{{{"sdkclient": {{{{"name": "{}"}}}}, "payload": {}, "channel": "{}"}}}}}}}}\n'.format(self._name, '{}', '{}')
         self._err_msg = '{{{{"signal": {{{{"sdkclient": {{{{"name": "{}", "error": {}}}}}}}}}}}}}\n'.format(self._name, '{}')
+        self._call_agent_msg = '{{{{"signal": {{{{"sdkclient": {{{{"name": "{}", "call": {}}}}}}}}}}}}}\n'.format(self._name, '{}')
 
         # Lookup-table (cmd_type -> callback)
         # Store the callback function for a particular message type
@@ -249,6 +252,56 @@ class IottlySDK:
             with self._buffer_full:
                 self._buffer_full.notify()
             self._buffer.put(payload) # en-queue the msg blocking
+
+    @min_agent_version('1.8.0')
+    def call_agent(self, cmd, *args):
+        """Call a Python snippet in the user-defined scripts of the attached agent.
+
+        Use this method when you want to invoke a snippet from the user-defined
+        scripts in the **iottly agent** currently attached to this instance of
+        the iottly SDK.
+
+        Calls to user snippets are kept synchronous so, if the  agent is
+        unavailiable the call is dropped with a `DisconnectedSDK` error.
+        You should trap this error and retry later after the SDK has established
+        a connection with the **iottly agent** (see the `on_agent_status_changed`
+        callback in the SDK constructor).
+
+        Args:
+            cmd (`str`):
+                The name of the command to be called.
+            args (`dict`):
+                The arguments that will be provided to the user-defined command.
+                This `dict` *must* be JSON-serializable.
+
+        Raises:
+            DisconnectedSDK:
+                `call_agent` was called while the SDK is not connected to a
+                iottly agent.
+
+        """
+        if cmd and not isinstance(cmd, str):
+            err = 'cmd must be a str but {} was given.'.format(type(cmd))
+            raise TypeError(err)
+
+        cmd_args = {}
+        if len(args) == 1:
+            args_dict = args[0]
+            if not isinstance(args_dict, dict):
+                err = 'args must be a dict but {} was given.'.format(type(args_dict))
+                raise TypeError(err)
+            cmd_args.update(args_dict)
+
+        with self._socket_state_lock:
+            agent_linked = self._agent_linked
+
+        if not agent_linked:
+            raise DisconnectedSDK("Blocking-IO operation not allowed for `agent_call`")
+
+        payload = json.dumps(dict([(cmd, cmd_args)]))
+        msg = self._call_agent_msg.format(payload).encode()
+        # send the message right-away
+        self._send_msg_through_socket(msg)
 
     def stop(self):
         """Convenience method to stop the sdk threads and perform cleanup

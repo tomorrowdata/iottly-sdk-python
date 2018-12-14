@@ -15,6 +15,7 @@
 import six
 from distutils.version import StrictVersion
 
+from .errors import InvalidAgentVersion
 
 # ======================================================================== #
 # ============================ Decorators ================================ #
@@ -51,9 +52,3 @@ def min_agent_version(min_version):
                     raise InvalidAgentVersion(err_msg)
         return wrapper
     return decorator
-
-# ======================================================================== #
-# ============================= Exceptions =============================== #
-# ======================================================================== #
-
-class InvalidAgentVersion(Exception): pass
