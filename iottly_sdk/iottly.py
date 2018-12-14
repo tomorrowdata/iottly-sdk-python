@@ -267,6 +267,9 @@ class IottlySDK:
         a connection with the **iottly agent** (see the `on_agent_status_changed`
         callback in the SDK constructor).
 
+        .. warning::
+            Requires **iottly agent** version `>= 1.8.0`
+
         Args:
             cmd (`str`):
                 The name of the command to be called.
@@ -276,8 +279,10 @@ class IottlySDK:
 
         Raises:
             DisconnectedSDK:
-                `call_agent` was called while the SDK is not connected to a
+                `call_agent` called while the SDK was not connected to a
                 iottly agent.
+            InvalidAgentVersion:
+                `call_agent` called while the SDK was connected to an agent < 1.8.0
 
         """
         if cmd and not isinstance(cmd, str):

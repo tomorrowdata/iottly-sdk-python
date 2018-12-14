@@ -18,7 +18,7 @@ Installing using pip (recommended)
     sudo pip install https://github.com/tomorrowdata/iottly-sdk-python/archive/1.2.0.tar.gz
 
 
-or using setuptools
+Installing using setuptools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
