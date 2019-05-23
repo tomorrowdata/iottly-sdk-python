@@ -41,11 +41,14 @@ def read_msg_from_socket(socket, msg_buf):
                 else:
                     msg_buf[:] = msg_buf[i+1:]
                 return msg
-        buf = socket.recv(1024)
-        if buf == b'':
-            go_on = False
-        else:
-            msg_buf.append(buf)
+        try:
+            buf = socket.recv(1024)
+            if buf == b'':
+                go_on = False
+            else:
+                msg_buf.append(buf)
+        except OSError:
+            go_on= False
 
 
 
@@ -66,6 +69,13 @@ class IottlySDK(unittest.TestCase):
         except AttributeError:
             # Python 2.7
             shutil.rmtree(self.sock_dir)
+
+    def wait_or_fail(self, evt, timeout=2.0, msg=''):
+        """Wait timeout second for an event or fail test with msg
+        """
+        res = evt.wait(timeout)
+        if not res:
+            self.fail(msg)
 
     def test_connection_with_running_server(self):
         server_started = multiprocessing.Event()
@@ -99,35 +109,44 @@ class IottlySDK(unittest.TestCase):
     def test_get_version_from_agent(self):
         server_started = multiprocessing.Event()
         cb_called = multiprocessing.Event()
+        sdk_linked = multiprocessing.Event()
+        finished = multiprocessing.Event()
+
         def send_sdkinit_signal(s):
             s.send(b'{"signal": {"sdkinit": {"version": "1.8.0"}}}\n')
             cb_called.set()
+            msg_buf = []
+            read_msg_from_socket(s, msg_buf)
+            finished.wait(4.0)
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=send_sdkinit_signal)
         server.start()
-        try:
-            server_started.wait(2)
-        except OSError as e:
-            if e.errno == errno.ETIMEDOUT:
-                pass
+        self.wait_or_fail(server_started, timeout=2.0, msg='Cannot start mock server')
 
-        sdk = iottly.IottlySDK('testapp', self.socket_path)
+        def agent_status_cb(status):
+            sdk_linked.set()
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path,
+                                    on_agent_status_changed=agent_status_cb)
         sdk.start()
-        try:
-            cb_called.wait(1.0)
-            self.assertTrue(cb_called.is_set())
-            self.assertEqual('1.8.0', sdk._agent_version)
-        except OSError as e:
-            if e.errno == errno.ETIMEDOUT:
-                self.fail('Server doesn\'t received any connection')
-        finally:
-            sdk.stop()
-            server.stop()
+        self.wait_or_fail(cb_called, timeout=2.0, msg='Cannot sent sdkinit from server')
+        self.wait_or_fail(sdk_linked, timeout=10.0, msg='Started CB not called')
+        self.assertEqual('1.8.0', sdk._agent_version)
+        finished.set()
+        server.stop()
+        sdk.stop()
 
     def test_connection_callback(self):
         server_started = multiprocessing.Event()
         client_connected = multiprocessing.Event()
+        exit_set = multiprocessing.Event()
+
         def on_connect(s):
             client_connected.set()
+            msg_buf = []
+            s.send(b'filler')
+            while not exit_set.is_set():
+                read_msg_from_socket(s, msg_buf)
+
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
         server.start()
         try:
@@ -142,14 +161,19 @@ class IottlySDK(unittest.TestCase):
         sdk.start()
 
         client_connected.wait(2.0)
-        server.stop()
+        time.sleep(2.0)
         sdk.stop()
+        exit_set.set()
+        server.stop()
         agent_status_cb.assert_has_calls([call('started'), call('stopped')])
 
     def test_receiving_stopping_signal_from_agent(self):
         server_started = multiprocessing.Event()
         client_connected = multiprocessing.Event()
         def on_connect(s):
+            # Before sending the stopping signal we let fire
+            # the started CB timeout.
+            time.sleep(1.5)
             s.send(b'{"signal": {"agentstatus": "stopping"}}\n')
             client_connected.set()
         server = UDSStubServer(self.socket_path, on_bind=server_started.set, on_connect=on_connect)
@@ -165,9 +189,9 @@ class IottlySDK(unittest.TestCase):
                                 on_agent_status_changed=agent_status_cb)
         sdk.start()
         client_connected.wait(2.0)
-        server.stop()
+        time.sleep(3.0)  # give some time > timeout for deferred callback
 
-        time.sleep(0.6)  # give some time
+        server.stop()
         agent_status_cb.assert_has_calls([call('started'), call('stopping'), call('stopped')])
         sdk.stop()
 
@@ -373,3 +397,53 @@ class IottlySDK(unittest.TestCase):
 
         sdk.stop()
         server.stop()
+
+    def test_call_agent_inside_connection_callback(self):
+        """Test issue #5 https://github.com/tomorrowdata/iottly-sdk-python/issues/5
+        """
+        server_started = multiprocessing.Event()
+        server_accepted_conn = multiprocessing.Event()
+        server_init_rcvd = multiprocessing.Event()
+        server_init_sent = multiprocessing.Event()
+        server_call_agent_rcvd = multiprocessing.Event()
+
+        sdk_on_agent_status_changed_called = multiprocessing.Event()
+        sdk_call_agent_sent = multiprocessing.Event()
+
+        def server_script(s):
+            server_accepted_conn.set()
+            msg_buf = []
+            msg = read_msg_from_socket(s,msg_buf)
+            exp_msg = '{"signal": {"sdkclient": {"name": "testapp", "status": "connected", "version": "%s"}}}' % iottly.__version__
+            self.assertEqual(exp_msg, msg.decode())
+            server_init_rcvd.set()
+            s.send(b'{"signal": {"sdkinit": {"version": "1.8.0"}}}\n')
+            server_init_sent.set()
+            self.wait_or_fail(sdk_call_agent_sent, msg='call_agent was not invoked')
+            call_agent_msg = read_msg_from_socket(s, msg_buf)
+            self.assertEqual(b'{"signal": {"sdkclient": {"name": "testapp", "call": {"test_cmd": {}}}}}', call_agent_msg)
+            server_call_agent_rcvd.set()
+            s.close()
+
+        def agent_status_cb(status):
+            sdk_on_agent_status_changed_called.set()
+            if status == 'started':
+                sdk.call_agent('test_cmd', {})
+                sdk_call_agent_sent.set()
+
+        server = UDSStubServer(self.socket_path,
+                            on_bind=server_started.set, on_connect=server_script)
+        server.start()
+        self.wait_or_fail(server_started, msg='Cannot start server')
+
+        sdk = iottly.IottlySDK('testapp', self.socket_path,
+                                on_agent_status_changed=agent_status_cb)
+        sdk.start()
+        self.wait_or_fail(server_accepted_conn, msg='Client did not connect')
+        self.wait_or_fail(server_init_rcvd)
+        self.wait_or_fail(server_init_sent)
+        self.wait_or_fail(sdk_on_agent_status_changed_called, msg='Agent status changed CB not invoked')
+        self.wait_or_fail(sdk_call_agent_sent, msg='call_agent was not invoked')
+        self.wait_or_fail(server_call_agent_rcvd, msg='call_agent was not received')
+        server.stop()
+        sdk.stop()
