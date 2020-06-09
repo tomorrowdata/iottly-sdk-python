@@ -1,243 +1,156 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Python SDK iottly &#8212; iottly-sdk 1.1.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>Python SDK iottly &#8212; iottly-sdk 1.2.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head>
-  <body>
+  </head><body>
   
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="python-sdk-iottly">
 <h1>Python SDK iottly<a class="headerlink" href="#python-sdk-iottly" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>If you are using Python 3.4.x install <strong>iottly-sdk</strong> &gt;= <strong>1.1.0</strong></li>
-<li>If you are using Python 2.7.x install <strong>iottly-sdk</strong> &gt;= <strong>1.2.0</strong></li>
-</ul>
-<div class="section" id="installing-using-pip-recommended">
-<h3>Installing using pip (recommended)<a class="headerlink" href="#installing-using-pip-recommended" title="Permalink to this headline">¶</a></h3>
-<ul>
-<li><p class="first">On <strong>Python 3</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">tomorrowdata</span><span class="o">/</span><span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="mf">1.2</span><span class="o">.</span><span class="mf">0.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-</pre></div>
+<p>Python module handling interaction with the <a class="reference external" href="https://iottly.com/">iottly</a> agent from third-party applications.</p>
+<div class="line-block">
+<div class="line"><br /></div>
 </div>
-</li>
-<li><p class="first">On <strong>Python 2.7</strong></p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">tomorrowdata</span><span class="o">/</span><span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="mf">1.2</span><span class="o">.</span><span class="mf">0.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</div>
-<div class="section" id="or-using-setuptools">
-<h3>or using setuptools<a class="headerlink" href="#or-using-setuptools" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="o">-</span><span class="n">O</span> <span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="mf">1.2</span><span class="o">.</span><span class="mf">0.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">tomorrowdata</span><span class="o">/</span><span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="mf">1.2</span><span class="o">.</span><span class="mf">0.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-<span class="n">tar</span> <span class="o">-</span><span class="n">xzf</span> <span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="mf">1.2</span><span class="o">.</span><span class="mf">0.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">tmp</span>
-<span class="n">cd</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">iottly</span><span class="o">-</span><span class="n">sdk</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="mf">1.2</span><span class="o">.</span><span class="mi">0</span>
-</pre></div>
-</div>
-<ul>
-<li><p class="first">On Python 3</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
-</pre></div>
-</div>
-</li>
-<li><p class="first">On Python 2.7</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">python2</span><span class="o">.</span><span class="mi">7</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</div>
-</div>
-<div class="section" id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="iottly_sdk.iottly.IottlySDK">
-<em class="property">class </em><code class="descname">IottlySDK</code><span class="sig-paren">(</span><em>name</em>, <em>socket_path='/var/run/iottly.com-agent/sdk/iottly_sdk_socket'</em>, <em>max_buffered_msgs=10</em>, <em>on_agent_status_changed=None</em>, <em>on_connection_status_changed=None</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class handling interactions with the iottly-agent</p>
-<p>After initializing the SDK it is possible to:</p>
-<ul class="simple">
-<li>Register <strong>callbacks</strong> that will be called when a particular type of
-message is received from the <strong>iottly agent</strong>.</li>
-<li>Send messages to <strong>iottly</strong> through the <strong>iottly agent</strong></li>
-</ul>
-<p>The SDK is initialized with a <cite>name</cite> that will identify your application
-in your <strong>iottly</strong> project.</p>
-<p>Optionally you can provide 2 callbacks to the <cite>IottlySDK</cite> constructor:</p>
-<blockquote>
-<div><ul class="simple">
-<li><dl class="first docutils">
-<dt><cite>on_agent_status_changed</cite>: that will be called when the SDK connect</dt>
-<dd>and disconnect from the <strong>iottly agent</strong>.
-This callback will receive a string argument of:<ul class="last">
-<li><cite>started</cite>: if the sdk is successfully linked with the <strong>iottly agent</strong></li>
-<li><cite>stopping</cite>: if the <strong>iottly agent</strong> is going through a scheduled reboot</li>
-<li><cite>stopped</cite>: if the sdk is disconnected from the <strong>iottly agent</strong></li>
+<dl class="simple">
+<dt>Briefly, the registered app could:</dt><dd><ul class="simple">
+<li><p>Sends messages to iottly</p></li>
+<li><p>Subscribes to specifics commands received from the iottly-agent</p></li>
+<li><p>Calls a Python snippet in the user-defined scripts of the attached agent</p></li>
+<li><p>Registers callbacks on specifics iottly-agent notification</p></li>
 </ul>
 </dd>
 </dl>
-</li>
-<li><dl class="first docutils">
-<dt><cite>on_connection_status_changed</cite>: that will be called when the <strong>iottly agent</strong></dt>
-<dd>has sent a notification on a change in the MQTT connectivity of the
-device.
-This callback will receive a string argument of:<ul class="last">
-<li><cite>connected</cite>: MQTT is up in the linked <strong>iottly agent</strong></li>
-<li><dl class="first docutils">
-<dt><cite>disconnected</cite>: MQTT is down in the linked <strong>iottly agent</strong></dt>
-<dd>(messages sent with the iottly agent while disconnected will be
-bufferd internally)q</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> (<cite>str</cite>) – an identifier for the connected application.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
-<li><strong>socket_path</strong> (<cite>str</cite>) – the path to the unix-socket exposed by the iottly agent.</li>
-<li><strong>max_buffered_msgs</strong> (<cite>int</cite>) – the maximum number of messages buffered internally.</li>
-<li><strong>on_agent_status_changed</strong> (<em>func</em><em>, </em><em>optional</em>) – callback to receive notification on the iottly agent status.</li>
-<li><strong>on_connection_status_changed</strong> (<em>func</em><em>, </em><em>optional</em>) – callback to receive notification on the
-iottly agent connection status.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="iottly_sdk.iottly.IottlySDK.subscribe">
-<code class="descname">subscribe</code><span class="sig-paren">(</span><em>cmd_type</em>, <em>callback</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.subscribe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subscribe to specific command received from the iottly-agent.</p>
-<p>After subscribing a callback for a command type, the iottly SDK is
-notified each time the <strong>iottly agent</strong> receives a message for the
-particular command.</p>
-<p>The <cite>callback</cite> will be invoked with a dict containing the
-command parameters.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">If you call <cite>subscribe</cite> with a <cite>cmd_type</cite> already registered the callback is overwritten.</p>
+<div class="line-block">
+<div class="line"><br /></div>
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>cmd_type</strong> (<cite>str</cite>) – The string denoting a particular type of command.</li>
-<li><strong>callback</strong> (<em>func</em><em> or </em><em>callable</em>) – The callback invoked when a message of type <cite>cmd_type</cite> is received from the <strong>iottly agent</strong></li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code> – The method was invoked with an argument of wrong type.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="iottly_sdk.iottly.IottlySDK.start">
-<code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Connect to the iottly agent.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="iottly_sdk.iottly.IottlySDK.send">
-<code class="descname">send</code><span class="sig-paren">(</span><em>msg</em>, <em>channel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.send" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sends a message to iottly.</p>
-<p>Use this method for sending a message to iottly through
-the <strong>iottly agent</strong> running on the same machine.</p>
-<p>If the agent is unavailable the message is buffered internally.
-At most <cite>max_buffered_msgs</cite> messages will be kept in the internal
-buffer, after this limit is reached the older messages will be
-discarded.</p>
-<div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last">The <cite>max_buffered_msgs</cite> parameter is configurable during the SDK initialization.</p>
+<p>How it works:</p>
+<img alt="_images/Agent_SDK.jpg" src="_images/Agent_SDK.jpg" />
+<div class="line-block">
+<div class="line"><br /></div>
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>msg</strong> (<cite>dict</cite>) – The data to be sent. The <cite>dict</cite> should be JSON-serializable.</li>
-<li><strong>channel</strong> (<cite>str</cite>) – The channel to which the message will be forwarded.
-This can be used, for example, to route traffic to
-a specific webhook.
-Default to None</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code> – <cite>send</cite> was invoked with a non <cite>dict</cite> argument.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – <cite>send</cite> was invoked with a non JSON-serializable <cite>dict</cite>.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<p>Example snippet:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
 
-</dd></dl>
+<span class="kn">from</span> <span class="nn">iottly_sdk</span> <span class="kn">import</span> <span class="n">IottlySDK</span>
 
+<span class="c1"># Define callback to receive notifications</span>
+<span class="c1"># about the iottly agent status:</span>
+<span class="c1"># -  started</span>
+<span class="c1"># -  stopping</span>
+<span class="c1"># -  stopped</span>
+<span class="k">def</span> <span class="nf">on_agent_status_changed</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;on_agent_status_changed: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">status</span><span class="p">))</span>
+
+<span class="c1"># Define callback to receive notifications</span>
+<span class="c1"># about the iottly agent mqtt connection status:</span>
+<span class="c1"># -  connected</span>
+<span class="c1"># -  disconnected</span>
+<span class="k">def</span> <span class="nf">on_connection_status_changed</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;on_connection_status_changed: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">status</span><span class="p">))</span>
+
+<span class="c1"># Create an instance of IottlySDK with:</span>
+<span class="c1"># -  a &quot;name&quot; to identify your application (this will appear</span>
+<span class="c1">#    in the dashboard logs)</span>
+<span class="c1"># -  the optional number of messages retained if agent is</span>
+<span class="c1">#    down (defaults to 10)</span>
+<span class="c1"># -  the previously defined callbacks (optional) to receive</span>
+<span class="c1">#    agent status notifications</span>
+<span class="n">iottlysdk</span> <span class="o">=</span> <span class="n">IottlySDK</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;myfirstiottlyapp&#39;</span><span class="p">,</span>
+    <span class="n">max_buffered_msgs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">on_agent_status_changed</span><span class="o">=</span><span class="n">on_agent_status_changed</span><span class="p">,</span>
+    <span class="n">on_connection_status_changed</span><span class="o">=</span><span class="n">on_connection_status_changed</span><span class="p">)</span>
+
+<span class="c1"># Define one callback for each incoming commands you want to</span>
+<span class="c1"># subscribe to. Commands are defined in the iottly</span>
+<span class="c1"># dashboard / management commands panel.</span>
+<span class="k">def</span> <span class="nf">on_echo_received</span><span class="p">(</span><span class="n">cmdpars</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;on_echo_received: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cmdpars</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">on_examplecommand_received</span><span class="p">(</span><span class="n">cmdpars</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;on_examplecommand_received: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cmdpars</span><span class="p">))</span>
+
+<span class="c1"># Subscribe commands of interest and associate a callback</span>
+<span class="n">iottlysdk</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
+    <span class="n">cmd_type</span><span class="o">=</span><span class="s1">&#39;echo&#39;</span><span class="p">,</span>
+    <span class="n">callback</span><span class="o">=</span><span class="n">on_echo_received</span>
+<span class="p">)</span>
+<span class="n">iottlysdk</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span>
+    <span class="n">cmd_type</span><span class="o">=</span><span class="s1">&#39;examplecommand&#39;</span><span class="p">,</span>
+    <span class="n">callback</span><span class="o">=</span><span class="n">on_examplecommand_received</span>
+<span class="p">)</span>
+
+<span class="c1"># Start the sdk loops</span>
+<span class="n">iottlysdk</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Here follows the main blocking loop of your application.</span>
+<span class="c1"># It &quot;reads a temperature&quot; and send it to iottly using</span>
+<span class="c1"># the &#39;send&#39; method.</span>
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">^C to exit, &quot;m&quot; to send 1 message, &#39;</span>
+            <span class="s1">&#39;&quot;l&quot; to send 20 messages:</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s1">&#39;m&#39;</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="mi">22</span><span class="p">}</span>
+            <span class="c1"># send a message to iottly</span>
+            <span class="n">iottlysdk</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s1">&#39;l&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">30</span><span class="p">):</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;temperature&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">}</span>
+
+                <span class="c1"># send a message to iottly</span>
+                <span class="n">iottlysdk</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
 <div class="toctree-wrapper compound">
-</div>
-</div>
-<div class="section" id="changelog">
-<h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
-<div class="versionadded">
-<p><span class="versionmodified">New in version 1.1.0: </span>Adds support for Python 3.4</p>
-</div>
-<div class="versionadded">
-<p><span class="versionmodified">New in version 1.2.0: </span>Adds support for Python 2.7</p>
-</div>
+<p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="porting.html">Porting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
 </div>
 </div>
 
 
           </div>
+          
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -245,6 +158,7 @@ Default to None</li>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="installation.html" title="next chapter">Installation</a></li>
   </ul></li>
 </ul>
 </div>
@@ -271,17 +185,26 @@ Default to None</li>
 
 
 
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="porting.html">Porting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
 
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2018, TomorrowData Srl.
+      &copy;2020, TomorrowData Srl.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/index.rst.txt"
