@@ -4,6 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API &#8212; iottly-sdk 1.2.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -159,7 +160,7 @@ Default to None</p></li>
 
 <dl class="py method">
 <dt id="iottly_sdk.iottly.IottlySDK.call_agent">
-<code class="sig-name descname">call_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cmd</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.call_agent" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">call_agent</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#iottly_sdk.iottly.IottlySDK.call_agent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Call a Python snippet in the user-defined scripts of the attached agent.</p>
 <p>Use this method when you want to invoke a snippet from the user-defined
 scripts in the <strong>iottly agent</strong> currently attached to this instance of
@@ -251,7 +252,7 @@ This <cite>dict</cite> <em>must</em> be JSON-serializable.</p></li>
       &copy;2020, TomorrowData Srl.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

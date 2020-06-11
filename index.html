@@ -4,6 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python SDK iottly &#8212; iottly-sdk 1.2.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -33,19 +34,28 @@
             
   <div class="section" id="python-sdk-iottly">
 <h1>Python SDK iottly<a class="headerlink" href="#python-sdk-iottly" title="Permalink to this headline">¶</a></h1>
-<p>Python module handling interaction with the <a class="reference external" href="https://iottly.com/">iottly</a> agent from third-party applications.</p>
+<p>Python module handling interaction with the <a class="reference external" href="https://iottly.com/">iottly</a> agent from third-party applications installed locally on the device.</p>
+<p>For example the custom application takes care of the interactions with the
+low level hardware and buses, while delegating to the iottly Agent the secure
+communication over MQTT.</p>
+<p>Moreover the custom application can invoke python scripts registered in the Agent
+to perform tasks like complex event detection and correlations. This is like
+“functions as a service on embedded devices”, and turns out to be particularly
+useful if the rules must be updated frequently or different versions of the rules
+must be maintained for devices in different installations.</p>
+<img alt="_images/image.png" src="_images/image.png" />
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
-<dl class="simple">
-<dt>Briefly, the registered app could:</dt><dd><ul class="simple">
-<li><p>Sends messages to iottly</p></li>
-<li><p>Subscribes to specifics commands received from the iottly-agent</p></li>
-<li><p>Calls a Python snippet in the user-defined scripts of the attached agent</p></li>
-<li><p>Registers callbacks on specifics iottly-agent notification</p></li>
+<p>Briefly, the registered app can:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Send messages to iottly</p></li>
+<li><p>Subscribe to specifics commands received from the iottly-agent</p></li>
+<li><p>Call a Python snippet in the user-defined scripts of the attached Agent</p></li>
+<li><p>Register callbacks on specifics iottly-agent notification</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <div class="line-block">
 <div class="line"><br /></div>
 </div>
@@ -203,7 +213,7 @@
       &copy;2020, TomorrowData Srl.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
