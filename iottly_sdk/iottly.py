@@ -349,6 +349,13 @@ class IottlySDK:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 try:
                     s.connect(self._socket_path)
+                
+                except PermissionError as e:
+                    s.close()
+                    s = None
+                    logging.info("Permission denied, launch with proper permission")
+                    return
+
                 except OSError as e:
                     if e.errno == errno.ECONNREFUSED:
                         s.close()
