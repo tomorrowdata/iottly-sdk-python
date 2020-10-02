@@ -27,6 +27,7 @@ except:
     from Queue import Queue, Full
 
 import json
+import logging
 
 # Import the SDK version number
 from .version import __version__
@@ -36,6 +37,16 @@ from .errors import DisconnectedSDK
 # Define named tuple to represent msg and metadata in the
 # internal buffer
 Msg = namedtuple('Msg', ['payload', 'type', 'channel'])
+
+
+logger = logging.getLogger('iottly-sdk')
+logger.setLevel(logging.ERROR)
+sh = logging.StreamHandler()
+sh.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+sh.setFormatter(formatter)
+logger.addHandler(sh)
+
 
 
 class IottlySDK:
@@ -353,7 +364,7 @@ class IottlySDK:
                 except PermissionError as e:
                     s.close()
                     s = None
-                    logging.info("Permission denied, launch with proper permission")
+                    logger.error("Permission denied, launch with proper permission")
                     return
 
                 except OSError as e:
