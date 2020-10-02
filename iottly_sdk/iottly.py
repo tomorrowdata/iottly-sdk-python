@@ -531,10 +531,12 @@ class IottlySDK:
     def _handle_signals_from_agent(self, signal):
         if 'agentstatus' in signal:
             status = signal['agentstatus']  # TODO validate status
-            self._on_agent_status_changed_cb(status)
+            if self._on_agent_status_changed_cb:
+                self._on_agent_status_changed_cb(status)
         elif 'connectionstatus' in signal:
             status = signal['connectionstatus']  # TODO validate status
-            self._on_connection_status_changed_cb(status)
+            if self._on_connection_status_changed_cb:
+                self._on_connection_status_changed_cb(status)
         elif 'sdkinit' in signal:
             version = signal['sdkinit']['version']
             with self._agent_version_state_lock:
